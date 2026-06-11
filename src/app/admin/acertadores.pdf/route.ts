@@ -1,4 +1,4 @@
-import PDFDocument from "pdfkit";
+import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import { getDailyWinners, type DailyWinner, type WinnerFilters } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
