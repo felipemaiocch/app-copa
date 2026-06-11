@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { ArrowLeft, CheckCircle2, Medal, Trophy, Users } from "lucide-react";
 import { saveResult } from "@/app/actions";
+import { SetupError } from "@/components/setup-error";
 import { getDailyWinners, getMatches, getRanking } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,15 @@ function formatDate(value: string) {
 }
 
 export default async function AdminPage() {
-  const [matches, ranking, winners] = await Promise.all([getMatches(), getRanking(), getDailyWinners()]);
+  let matches;
+  let ranking;
+  let winners;
+
+  try {
+    [matches, ranking, winners] = await Promise.all([getMatches(), getRanking(), getDailyWinners()]);
+  } catch (error) {
+    return <SetupError error={error} />;
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f8fc] px-4 py-6 text-[#171925] sm:px-6 lg:px-8">

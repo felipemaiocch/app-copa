@@ -9,6 +9,17 @@ export function getSql() {
     throw new Error("DATABASE_URL is not configured.");
   }
 
+  if (process.env.DATABASE_URL.startsWith("psql ")) {
+    throw new Error("DATABASE_URL must be the postgres URL only, without the psql command.");
+  }
+
+  if (
+    process.env.DATABASE_URL.startsWith("\"") ||
+    process.env.DATABASE_URL.startsWith("'")
+  ) {
+    throw new Error("DATABASE_URL must not include wrapping quotes.");
+  }
+
   if (!client) {
     client = neon(process.env.DATABASE_URL);
   }
