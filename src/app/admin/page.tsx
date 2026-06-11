@@ -16,6 +16,17 @@ function formatDate(value: string) {
   }).format(new Date(`${value}T12:00:00`));
 }
 
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function asStringParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -291,6 +302,9 @@ export default async function AdminPage({
                       <p className="truncate text-sm font-black">{winner.name}</p>
                       <p className="mt-1 text-xs font-semibold leading-5 text-[#62677f]">
                         {winner.department} · {formatDate(winner.matchDate)} · {winner.matchLabel} · {winner.predictedScore}
+                      </p>
+                      <p className="mt-1 text-xs font-black text-[#3857e8]">
+                        Última alteração: {formatDateTime(winner.updatedAt)}
                       </p>
                     </div>
                   ))

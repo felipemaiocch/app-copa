@@ -11,6 +11,17 @@ function formatDate(value: string) {
   }).format(new Date(`${value}T12:00:00`));
 }
 
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function getFilters(url: string): WinnerFilters {
   const searchParams = new URL(url).searchParams;
 
@@ -43,13 +54,14 @@ function drawRow(
 
   doc.rect(40, y - 6, 515, 34).fill(fill);
   doc.fillColor("#171925").fontSize(8);
-  doc.text(formatDate(winner.matchDate), 48, y, { width: 54 });
-  doc.text(winner.kickoffTime, 98, y, { width: 34 });
-  doc.text(winner.matchLabel, 136, y, { width: 145 });
-  doc.text(winner.name, 286, y, { width: 105 });
-  doc.text(winner.department, 396, y, { width: 82 });
-  doc.text(winner.predictedScore, 484, y, { width: 38, align: "center" });
-  doc.text(winner.finalScore, 524, y, { width: 28, align: "center" });
+  doc.text(formatDate(winner.matchDate), 46, y, { width: 45 });
+  doc.text(winner.kickoffTime, 91, y, { width: 30 });
+  doc.text(winner.matchLabel, 124, y, { width: 115 });
+  doc.text(winner.name, 243, y, { width: 92 });
+  doc.text(winner.department, 339, y, { width: 70 });
+  doc.text(winner.predictedScore, 411, y, { width: 32, align: "center" });
+  doc.text(winner.finalScore, 444, y, { width: 30, align: "center" });
+  doc.text(formatDateTime(winner.updatedAt), 480, y, { width: 70 });
 }
 
 async function makePdf(winners: DailyWinner[], filters: WinnerFilters) {
@@ -73,13 +85,14 @@ async function makePdf(winners: DailyWinner[], filters: WinnerFilters) {
   let y = 150;
   doc.rect(40, y - 8, 515, 24).fill("#171925");
   doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8);
-  doc.text("Data", 48, y, { width: 54 });
-  doc.text("Hora", 98, y, { width: 34 });
-  doc.text("Jogo", 136, y, { width: 145 });
-  doc.text("Nome", 286, y, { width: 105 });
-  doc.text("Depto.", 396, y, { width: 82 });
-  doc.text("Palp.", 484, y, { width: 38, align: "center" });
-  doc.text("Real", 524, y, { width: 28, align: "center" });
+  doc.text("Data", 46, y, { width: 45 });
+  doc.text("Hora", 91, y, { width: 30 });
+  doc.text("Jogo", 124, y, { width: 115 });
+  doc.text("Nome", 243, y, { width: 92 });
+  doc.text("Depto.", 339, y, { width: 70 });
+  doc.text("Palp.", 411, y, { width: 32, align: "center" });
+  doc.text("Real", 444, y, { width: 30, align: "center" });
+  doc.text("Alterado", 480, y, { width: 70 });
   y += 28;
 
   if (winners.length === 0) {

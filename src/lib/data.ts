@@ -45,6 +45,7 @@ export type DailyWinner = {
   department: string;
   predictedScore: string;
   finalScore: string;
+  updatedAt: string;
 };
 
 export type WinnerFilters = {
@@ -535,7 +536,8 @@ export async function getDailyWinners(filters: WinnerFilters = {}): Promise<Dail
       COALESCE(NULLIF(p.email, ''), concat(p.first_name, ' ', p.last_name)) AS name,
       p.department,
       concat(pr.home_score, ' - ', pr.away_score) AS predicted_score,
-      concat(m.home_score, ' - ', m.away_score) AS final_score
+      concat(m.home_score, ' - ', m.away_score) AS final_score,
+      pr.updated_at
     FROM predictions pr
     INNER JOIN participants p ON p.id = pr.participant_id
     INNER JOIN matches m ON m.id = pr.match_id
@@ -559,5 +561,6 @@ export async function getDailyWinners(filters: WinnerFilters = {}): Promise<Dail
     department: String(row.department),
     predictedScore: String(row.predicted_score),
     finalScore: String(row.final_score),
+    updatedAt: new Date(String(row.updated_at)).toISOString(),
   }));
 }

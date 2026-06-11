@@ -241,7 +241,7 @@ export function PredictionApp({
                 <div>
                   <h2 className="text-3xl font-black">Jogos</h2>
                   <p className="mt-1 text-sm text-[#62677f]">
-                    Cada jogo pode ser alterado até 2h antes do início. Placar exato vale 6 pontos.
+                    Você pode salvar e alterar quantas vezes quiser até 2h antes do início de cada jogo.
                   </p>
                 </div>
               </div>
