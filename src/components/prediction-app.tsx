@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { CalendarDays, CheckCircle2, Gift, Loader2, Lock, Medal, Sparkles, Trophy } from "lucide-react";
+import { CalendarDays, CheckCircle2, Gift, Loader2, Lock, Medal, Menu, Sparkles, Trophy } from "lucide-react";
 import { submitPredictions } from "@/app/actions";
 import type { Match, Participant, Prediction, RankingRow } from "@/lib/data";
 import { departments } from "@/lib/departments";
@@ -108,10 +108,10 @@ export function PredictionApp({
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f8fc] text-[#171925]">
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-5 sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f8fc] text-[#171925]">
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-3 py-4 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-5 rounded-[28px] bg-white px-5 py-6 shadow-[0_18px_70px_rgba(29,35,73,0.08)] sm:px-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-5">
             <Image
               src="https://static.wixstatic.com/media/613e90_f01ff1f2d28d45cf9a7aa059568f7313~mv2.png/v1/fill/w_460,h_92,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo-DRnovo_edited.png"
               alt="DR Monitora"
@@ -134,7 +134,7 @@ export function PredictionApp({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 rounded-3xl bg-[#edf2ff] p-3 text-center sm:min-w-96">
+          <div className="grid w-full grid-cols-3 gap-2 rounded-3xl bg-[#edf2ff] p-2 text-center sm:min-w-96 sm:gap-3 sm:p-3 lg:w-auto">
             <div className="rounded-2xl bg-white p-4">
               <p className="text-3xl font-black text-[#3857e8]">{total}</p>
               <p className="text-xs font-bold uppercase text-[#71768d]">jogos</p>
@@ -150,20 +150,36 @@ export function PredictionApp({
           </div>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <details className="sticky top-3 z-20 rounded-2xl border border-[#dfe3f2] bg-white/95 shadow-[0_12px_34px_rgba(29,35,73,0.14)] backdrop-blur lg:hidden">
+          <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-black text-[#171925] marker:hidden">
+            <span className="inline-flex items-center gap-2">
+              <Menu className="h-5 w-5 text-[#3857e8]" />
+              Menu
+            </span>
+            <span className="text-xs font-bold text-[#62677f]">{openTotal} abertos</span>
+          </summary>
+          <nav className="grid grid-cols-2 gap-2 border-t border-[#e4e8f5] p-3 text-sm font-black">
+            <a href="#dados" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Dados</a>
+            <a href="#jogos" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Jogos</a>
+            <a href="#premios" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Prêmios</a>
+            <a href="#ranking" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Ranking</a>
+          </nav>
+        </details>
+
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <form action={formAction} className="flex flex-col gap-6">
-            <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-6">
+            <section id="dados" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-6">
               <div className="mb-5 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3857e8]">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black">Seus dados</h2>
+                <h2 className="text-xl font-black">Seus dados</h2>
                   <p className="text-sm text-[#62677f]">Use o e-mail do NEO para recuperar seus palpites.</p>
                 </div>
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
+              <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                   E-mail NEO
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px]">
@@ -220,7 +236,7 @@ export function PredictionApp({
               )}
             </section>
 
-            <section className="flex flex-col gap-5">
+            <section id="jogos" className="flex scroll-mt-20 flex-col gap-5">
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <h2 className="text-3xl font-black">Jogos</h2>
@@ -248,9 +264,9 @@ export function PredictionApp({
                           }`}
                         >
                           {matchState.isOpen && <input type="hidden" name="matchId" value={match.id} />}
-                          <div className="flex items-center justify-between border-b border-[#e4e8f5] px-5 py-4">
-                            <span className="text-base font-black">{match.groupName}</span>
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-start justify-between gap-3 border-b border-[#e4e8f5] px-4 py-4 sm:px-5">
+                            <span className="min-w-0 text-base font-black">{match.groupName}</span>
+                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                               {!matchState.isOpen && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f5fa] px-3 py-1 text-xs font-black text-[#71768d]">
                                   <Lock className="h-3.5 w-3.5" />
@@ -262,7 +278,7 @@ export function PredictionApp({
                               </span>
                             </div>
                           </div>
-                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-5 sm:px-6">
+                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 py-5 sm:gap-3 sm:px-6">
                             <Team flag={match.homeFlag} name={match.homeTeam} />
                             <span className="text-xl font-black">x</span>
                             <Team flag={match.awayFlag} name={match.awayTeam} alignRight />
@@ -271,7 +287,7 @@ export function PredictionApp({
                             {matchState.isOpen ? (
                               <>
                                 <span className="text-sm font-black sm:text-base">Seu palpite</span>
-                                <div className="flex items-center gap-2">
+                                <div className="flex shrink-0 items-center gap-2">
                                   <ScoreInput name={`homeScore:${match.id}`} defaultValue={prediction?.homeScore ?? 0} />
                                   <span className="font-black text-[#62677f]">-</span>
                                   <ScoreInput name={`awayScore:${match.id}`} defaultValue={prediction?.awayScore ?? 0} />
@@ -294,14 +310,14 @@ export function PredictionApp({
               ))}
             </section>
 
-            <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-3xl border border-[#dfe3f2] bg-white/95 p-4 shadow-[0_18px_55px_rgba(29,35,73,0.18)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+            <div className="sticky bottom-3 z-10 flex max-w-full flex-col gap-3 rounded-3xl border border-[#dfe3f2] bg-white/95 p-3 shadow-[0_18px_55px_rgba(29,35,73,0.18)] backdrop-blur sm:bottom-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
               <p className={`text-sm font-bold ${state.ok ? "text-emerald-700" : "text-[#62677f]"}`}>
                 {state.message || `Revise os ${openTotal} jogos abertos e salve seus palpites.`}
               </p>
               <button
                 type="submit"
                 disabled={isPending}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-6 text-base font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.30)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-6 text-base font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.30)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trophy className="h-5 w-5" />}
                 Salvar palpites
@@ -309,8 +325,8 @@ export function PredictionApp({
             </div>
           </form>
 
-          <aside className="flex flex-col gap-5">
-            <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
+          <aside className="flex min-w-0 flex-col gap-5">
+            <section id="premios" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
               <div className="mb-5 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1c7] text-[#aa7800]">
                   <Gift className="h-6 w-6" />
@@ -327,7 +343,7 @@ export function PredictionApp({
               </div>
             </section>
 
-            <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
+            <section id="ranking" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3857e8]">
                   <Medal className="h-6 w-6" />

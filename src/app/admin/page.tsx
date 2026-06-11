@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { ArrowLeft, CheckCircle2, Download, Filter, Medal, Trophy, Users } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, Filter, Medal, Menu, Trophy, Users } from "lucide-react";
 import { saveResult } from "@/app/actions";
 import { SetupError } from "@/components/setup-error";
 import { getDailyWinners, getMatches, getRanking, type WinnerFilters } from "@/lib/data";
@@ -60,17 +60,17 @@ export default async function AdminPage({
   const pdfHref = buildPdfHref(filters);
 
   return (
-    <main className="min-h-screen bg-[#f7f8fc] px-4 py-6 text-[#171925] sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f8fc] px-3 py-4 text-[#171925] sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <header className="flex flex-col gap-4 rounded-[26px] bg-white p-5 shadow-[0_18px_70px_rgba(29,35,73,0.08)] sm:p-7 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+          <div className="min-w-0">
             <Link href="/" className="mb-4 inline-flex items-center gap-2 text-sm font-black text-[#3857e8]">
               <ArrowLeft className="h-4 w-4" />
               Voltar para palpites
             </Link>
-            <h1 className="text-3xl font-black sm:text-4xl">Painel do bolao</h1>
+            <h1 className="text-3xl font-black sm:text-4xl">Painel do bolão</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#62677f]">
-              Lance resultados finais para calcular a pontuacao automaticamente e encontrar os acertadores de placar.
+              Lance resultados finais para calcular a pontuação automaticamente e encontrar os acertadores de placar.
             </p>
           </div>
           <Image
@@ -82,14 +82,30 @@ export default async function AdminPage({
           />
         </header>
 
-        <section className="grid gap-4 sm:grid-cols-3">
+        <details className="sticky top-3 z-20 rounded-2xl border border-[#dfe3f2] bg-white/95 shadow-[0_12px_34px_rgba(29,35,73,0.14)] backdrop-blur lg:hidden">
+          <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-black text-[#171925] marker:hidden">
+            <span className="inline-flex items-center gap-2">
+              <Menu className="h-5 w-5 text-[#3857e8]" />
+              Menu admin
+            </span>
+            <span className="text-xs font-bold text-[#62677f]">{winners.length} acertos</span>
+          </summary>
+          <nav className="grid grid-cols-2 gap-2 border-t border-[#e4e8f5] p-3 text-sm font-black">
+            <a href="#resumo" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Resumo</a>
+            <a href="#resultados" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Resultados</a>
+            <a href="#ranking-admin" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Ranking</a>
+            <a href="#acertadores" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Acertadores</a>
+          </nav>
+        </details>
+
+        <section id="resumo" className="grid scroll-mt-20 gap-4 sm:grid-cols-3">
           <Stat icon={<Trophy className="h-5 w-5" />} label="Jogos" value={matches.length} />
           <Stat icon={<Medal className="h-5 w-5" />} label="Participantes no ranking" value={ranking.length} />
           <Stat icon={<CheckCircle2 className="h-5 w-5" />} label="Acertos exatos" value={winners.length} />
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <section id="resultados" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-4 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-5">
             <div className="mb-5">
               <h2 className="text-2xl font-black">Resultados dos jogos</h2>
               <p className="mt-1 text-sm text-[#62677f]">Preencha o placar final e salve. O status passa para finalizado.</p>
@@ -100,7 +116,7 @@ export default async function AdminPage({
                 <form
                   key={match.id}
                   action={saveResult}
-                  className="grid gap-4 rounded-2xl border border-[#e1e5f2] bg-[#fbfcff] p-4 md:grid-cols-[1fr_auto]"
+                  className="grid min-w-0 gap-4 rounded-2xl border border-[#e1e5f2] bg-[#fbfcff] p-4 md:grid-cols-[minmax(0,1fr)_auto]"
                 >
                   <input type="hidden" name="matchId" value={match.id} />
                   <div className="min-w-0">
@@ -112,11 +128,11 @@ export default async function AdminPage({
                         <span className="rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">finalizado</span>
                       )}
                     </div>
-                    <p className="truncate text-base font-black sm:text-lg">
+                    <p className="max-w-full truncate text-base font-black sm:text-lg">
                       {match.homeFlag} {match.homeTeam} x {match.awayTeam} {match.awayFlag}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input
                       type="number"
                       min={0}
@@ -148,8 +164,8 @@ export default async function AdminPage({
             </div>
           </section>
 
-          <aside className="flex flex-col gap-6">
-            <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
+          <aside className="flex min-w-0 flex-col gap-6">
+            <section id="ranking-admin" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3857e8]">
                   <Users className="h-6 w-6" />
@@ -180,7 +196,7 @@ export default async function AdminPage({
               </div>
             </section>
 
-            <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
+            <section id="acertadores" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-4 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-5">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-black">Acertadores para sorteio</h2>
@@ -223,7 +239,7 @@ export default async function AdminPage({
                   <select
                     name="matchId"
                     defaultValue={filters.matchId ?? ""}
-                    className="h-10 rounded-2xl border border-[#d9deee] bg-white px-3 text-sm font-bold text-[#171925] outline-none focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                    className="h-10 max-w-full rounded-2xl border border-[#d9deee] bg-white px-3 text-sm font-bold text-[#171925] outline-none focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
                   >
                     <option value="">Todos</option>
                     {matches.map((match) => (
@@ -272,7 +288,7 @@ export default async function AdminPage({
                 ) : (
                   winners.map((winner, index) => (
                     <div key={`${winner.matchId}-${winner.name}-${index}`} className="rounded-2xl bg-[#f5f7fc] p-3">
-                      <p className="text-sm font-black">{winner.name}</p>
+                      <p className="truncate text-sm font-black">{winner.name}</p>
                       <p className="mt-1 text-xs font-semibold leading-5 text-[#62677f]">
                         {winner.department} · {formatDate(winner.matchDate)} · {winner.matchLabel} · {winner.predictedScore}
                       </p>
