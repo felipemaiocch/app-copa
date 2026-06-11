@@ -18,15 +18,24 @@ const initialActionState: ActionState = {
 };
 
 const departments = [
-  "Comercial",
-  "Cobranca",
-  "Marketing",
-  "Financeiro",
+  "DIRETORIA",
+  "MARKETING",
+  "COMERCIAL",
+  "FINANCEIRO",
+  "BACKOFFICE",
+  "RECUPERAÇÃO",
+  "TÉCNICA",
+  "FACILITIES",
+  "QUALIDADE",
+  "SAC",
   "TI",
-  "RH",
-  "Operacoes",
-  "Atendimento",
-  "Diretoria",
+  "PIRAPORA",
+  "ASSISTÊNCIA 24H",
+  "RE",
+  "JURÍDICO",
+  "RETENTROCAS",
+  "RA",
+  "TÉCNICOS",
 ];
 
 function formatDate(value: string) {
