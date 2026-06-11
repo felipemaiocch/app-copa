@@ -25,14 +25,18 @@ function asScore(value: FormDataEntryValue | null) {
 
 export async function submitPredictions(_previousState: unknown, formData: FormData) {
   const email = normalizeEmail(asText(formData.get("email")));
+  const firstName = asText(formData.get("firstName"));
+  const lastName = asText(formData.get("lastName"));
   const department = asText(formData.get("department"));
 
-  if (!email || !email.includes("@") || !department) {
-    return { ok: false, message: "Informe um e-mail valido e o departamento." };
+  if (!email || !email.includes("@") || !firstName || !lastName || !department) {
+    return { ok: false, message: "Informe e-mail, nome, sobrenome e departamento." };
   }
 
   const participant = await upsertParticipant({
     email,
+    firstName,
+    lastName,
     department,
   });
 

@@ -23,6 +23,8 @@ export type Prediction = {
 export type Participant = {
   id: string;
   email: string;
+  firstName: string;
+  lastName: string;
   department: string;
 };
 
@@ -360,7 +362,7 @@ export async function getParticipantByEmail(email?: string | null): Promise<Part
   const sql = getSql();
   const normalizedEmail = normalizeEmail(email);
   const rows = rowsOf(await sql`
-    SELECT id, email, department
+    SELECT id, email, first_name, last_name, department
     FROM participants
     WHERE lower(email) = ${normalizedEmail}
     LIMIT 1
@@ -372,6 +374,8 @@ export async function getParticipantByEmail(email?: string | null): Promise<Part
   return {
     id: String(row.id),
     email: String(row.email),
+    firstName: String(row.first_name),
+    lastName: String(row.last_name),
     department: String(row.department),
   };
 }
@@ -399,19 +403,22 @@ export async function getPredictions(participantId?: string | null): Promise<Pre
 
 export async function upsertParticipant(input: {
   email: string;
+  firstName: string;
+  lastName: string;
   department: string;
 }) {
   await ensureSchema();
   const sql = getSql();
   const email = normalizeEmail(input.email);
   const id = makeId("person");
-  const namePart = email.split("@")[0] || email;
 
   await sql`
     INSERT INTO participants (id, email, first_name, last_name, department, updated_at)
-    VALUES (${id}, ${email}, ${namePart}, '', ${input.department}, now())
+    VALUES (${id}, ${email}, ${input.firstName}, ${input.lastName}, ${input.department}, now())
     ON CONFLICT (lower(email))
     DO UPDATE SET
+      first_name = excluded.first_name,
+      last_name = excluded.last_name,
       department = excluded.department,
       updated_at = now()
     RETURNING id
@@ -474,7 +481,7 @@ export async function getRanking(): Promise<RankingRow[]> {
   const rows = rowsOf(await sql`
     SELECT
       p.id AS participant_id,
-      COALESCE(NULLIF(p.email, ''), concat(p.first_name, ' ', p.last_name)) AS name,
+      COALESCE(NULLIF(trim(concat(p.first_name, ' ', p.last_name)), ''), p.email) AS name,
       p.email,
       p.department,
       COALESCE(SUM(
@@ -533,7 +540,7 @@ export async function getDailyWinners(filters: WinnerFilters = {}): Promise<Dail
       concat(m.home_team, ' x ', m.away_team) AS match_label,
       m.match_date,
       m.kickoff_time,
-      COALESCE(NULLIF(p.email, ''), concat(p.first_name, ' ', p.last_name)) AS name,
+      COALESCE(NULLIF(trim(concat(p.first_name, ' ', p.last_name)), ''), p.email) AS name,
       p.department,
       concat(pr.home_score, ' - ', pr.away_score) AS predicted_score,
       concat(m.home_score, ' - ', m.away_score) AS final_score,

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { CalendarDays, CheckCircle2, Gift, Loader2, Lock, Medal, Menu, Sparkles, Trophy } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardList, Gift, Loader2, Lock, Medal, Menu, Sparkles, Trophy } from "lucide-react";
 import { submitPredictions } from "@/app/actions";
 import type { Match, Participant, Prediction, RankingRow } from "@/lib/data";
 import { departments } from "@/lib/departments";
@@ -84,6 +84,19 @@ export function PredictionApp({
     return Object.fromEntries(initialPredictions.map((prediction) => [prediction.matchId, prediction]));
   }, [initialPredictions]);
   const grouped = useMemo(() => groupMatches(matches), [matches]);
+  const savedPredictions = useMemo(() => {
+    return initialPredictions
+      .map((prediction) => {
+        const match = matches.find((item) => item.id === prediction.matchId);
+        if (!match) return null;
+
+        return {
+          ...prediction,
+          match,
+        };
+      })
+      .filter((prediction) => prediction !== null);
+  }, [initialPredictions, matches]);
   const total = matches.length;
   const openTotal = matches.filter((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen).length;
 
@@ -161,8 +174,9 @@ export function PredictionApp({
           <nav className="grid grid-cols-2 gap-2 border-t border-[#e4e8f5] p-3 text-sm font-black">
             <a href="#dados" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Dados</a>
             <a href="#jogos" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Jogos</a>
-            <a href="#premios" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Prêmios</a>
-            <a href="#ranking" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Ranking</a>
+            <a href="#meus-palpites" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Meus</a>
+            <a href="#regras" className="rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Regras</a>
+            <a href="#ranking" className="col-span-2 rounded-xl bg-[#f5f7fc] px-3 py-3 text-center text-[#3857e8]">Ranking</a>
           </nav>
         </details>
 
@@ -179,7 +193,7 @@ export function PredictionApp({
                 </div>
               </div>
 
-              <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
+              <div className="grid min-w-0 gap-3 lg:grid-cols-2">
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                   E-mail NEO
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px]">
@@ -202,6 +216,24 @@ export function PredictionApp({
                   <span className="text-xs font-semibold text-[#62677f]">
                     Digite o e-mail e clique em Carregar para recuperar palpites já salvos.
                   </span>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                  Nome
+                  <input
+                    name="firstName"
+                    defaultValue={initialParticipant?.firstName ?? ""}
+                    required
+                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                  />
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                  Sobrenome
+                  <input
+                    name="lastName"
+                    defaultValue={initialParticipant?.lastName ?? ""}
+                    required
+                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                  />
                 </label>
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                   Departamento
@@ -326,20 +358,55 @@ export function PredictionApp({
           </form>
 
           <aside className="flex min-w-0 flex-col gap-5">
-            <section id="premios" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
+            <section id="meus-palpites" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3857e8]">
+                  <ClipboardList className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black">Meus palpites</h2>
+                  <p className="text-sm text-[#62677f]">Palpites já salvos para este e-mail.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                {savedPredictions.length === 0 ? (
+                  <p className="rounded-2xl bg-[#f5f7fc] p-4 text-sm font-semibold text-[#62677f]">
+                    Carregue seu e-mail ou salve palpites para ver a lista aqui.
+                  </p>
+                ) : (
+                  savedPredictions.slice(0, 10).map(({ match, homeScore, awayScore }) => (
+                    <div key={match.id} className="rounded-2xl bg-[#f5f7fc] p-3">
+                      <p className="truncate text-sm font-black">
+                        {match.homeTeam} x {match.awayTeam}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#62677f]">
+                        {formatDate(match.matchDate)} · {homeScore} - {awayScore}
+                      </p>
+                    </div>
+                  ))
+                )}
+                {savedPredictions.length > 10 && (
+                  <p className="text-xs font-bold text-[#62677f]">Mostrando 10 de {savedPredictions.length} palpites salvos.</p>
+                )}
+              </div>
+            </section>
+
+            <section id="regras" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
               <div className="mb-5 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1c7] text-[#aa7800]">
                   <Gift className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black">Premios</h2>
-                  <p className="text-sm text-[#62677f]">Regras sugeridas para a campanha.</p>
+                  <h2 className="text-xl font-black">Regras</h2>
+                  <p className="text-sm text-[#62677f]">Como funciona o bolão.</p>
                 </div>
               </div>
               <div className="grid gap-3">
                 <Rule points="+6 pontos" text="Acertou o placar exato da partida." />
                 <Rule points="+3 pontos" text="Acertou apenas o vencedor ou empate." />
                 <Rule points="0 pontos" text="Errou o resultado." />
+                <Rule points="Edição" text="Você pode alterar o palpite até 2h antes do início de cada jogo." />
+                <Rule points="E-mail NEO" text="O e-mail recupera seus palpites; o ranking exibe nome e sobrenome." />
               </div>
             </section>
 
