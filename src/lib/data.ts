@@ -41,9 +41,18 @@ export type DailyWinner = {
   matchId: string;
   matchLabel: string;
   matchDate: string;
+  kickoffTime: string;
   name: string;
   department: string;
   predictedScore: string;
+  finalScore: string;
+};
+
+export type WinnerFilters = {
+  dateFrom?: string;
+  dateTo?: string;
+  matchId?: string;
+  department?: string;
 };
 
 type SeedMatch = {
@@ -474,33 +483,42 @@ export async function getRanking(): Promise<RankingRow[]> {
   }));
 }
 
-export async function getDailyWinners(): Promise<DailyWinner[]> {
+export async function getDailyWinners(filters: WinnerFilters = {}): Promise<DailyWinner[]> {
   await ensureSchema();
   const sql = getSql();
+
   const rows = rowsOf(await sql`
     SELECT
       m.id AS match_id,
       concat(m.home_team, ' x ', m.away_team) AS match_label,
       m.match_date,
+      m.kickoff_time,
       concat(p.first_name, ' ', p.last_name) AS name,
       p.department,
-      concat(pr.home_score, ' - ', pr.away_score) AS predicted_score
+      concat(pr.home_score, ' - ', pr.away_score) AS predicted_score,
+      concat(m.home_score, ' - ', m.away_score) AS final_score
     FROM predictions pr
     INNER JOIN participants p ON p.id = pr.participant_id
     INNER JOIN matches m ON m.id = pr.match_id
     WHERE m.status = 'finished'
       AND pr.home_score = m.home_score
       AND pr.away_score = m.away_score
+      AND (${filters.dateFrom || null}::date IS NULL OR m.match_date >= ${filters.dateFrom || null}::date)
+      AND (${filters.dateTo || null}::date IS NULL OR m.match_date <= ${filters.dateTo || null}::date)
+      AND (${filters.matchId || null}::text IS NULL OR m.id = ${filters.matchId || null})
+      AND (${filters.department || null}::text IS NULL OR p.department = ${filters.department || null})
     ORDER BY m.match_date DESC, m.kickoff_time DESC, name ASC
-    LIMIT 120
+    LIMIT 1000
   `);
 
   return rows.map((row) => ({
     matchId: String(row.match_id),
     matchLabel: String(row.match_label),
     matchDate: dateOnly(row.match_date),
+    kickoffTime: String(row.kickoff_time).slice(0, 5),
     name: String(row.name),
     department: String(row.department),
     predictedScore: String(row.predicted_score),
+    finalScore: String(row.final_score),
   }));
 }

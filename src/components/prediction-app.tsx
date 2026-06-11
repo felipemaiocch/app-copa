@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CalendarDays, CheckCircle2, Gift, Loader2, Lock, Medal, Sparkles, Trophy } from "lucide-react";
 import { submitPredictions } from "@/app/actions";
 import type { Match, Participant, Prediction, RankingRow } from "@/lib/data";
+import { departments } from "@/lib/departments";
 
 type ActionState = {
   ok: boolean;
@@ -16,27 +17,6 @@ const initialActionState: ActionState = {
   ok: false,
   message: "",
 };
-
-const departments = [
-  "DIRETORIA",
-  "MARKETING",
-  "COMERCIAL",
-  "FINANCEIRO",
-  "BACKOFFICE",
-  "RECUPERAÇÃO",
-  "TÉCNICA",
-  "FACILITIES",
-  "QUALIDADE",
-  "SAC",
-  "TI",
-  "PIRAPORA",
-  "ASSISTÊNCIA 24H",
-  "RE",
-  "JURÍDICO",
-  "RETENTROCAS",
-  "RA",
-  "TÉCNICOS",
-];
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {

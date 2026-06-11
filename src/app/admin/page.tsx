@@ -1,10 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { ArrowLeft, CheckCircle2, Medal, Trophy, Users } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, Filter, Medal, Trophy, Users } from "lucide-react";
 import { saveResult } from "@/app/actions";
 import { SetupError } from "@/components/setup-error";
-import { getDailyWinners, getMatches, getRanking } from "@/lib/data";
+import { getDailyWinners, getMatches, getRanking, type WinnerFilters } from "@/lib/data";
+import { departments } from "@/lib/departments";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +16,48 @@ function formatDate(value: string) {
   }).format(new Date(`${value}T12:00:00`));
 }
 
-export default async function AdminPage() {
+function asStringParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function buildWinnerFilters(searchParams?: Record<string, string | string[] | undefined>): WinnerFilters {
+  return {
+    dateFrom: asStringParam(searchParams?.dateFrom) || undefined,
+    dateTo: asStringParam(searchParams?.dateTo) || undefined,
+    matchId: asStringParam(searchParams?.matchId) || undefined,
+    department: asStringParam(searchParams?.department) || undefined,
+  };
+}
+
+function buildPdfHref(filters: WinnerFilters) {
+  const params = new URLSearchParams();
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters.matchId) params.set("matchId", filters.matchId);
+  if (filters.department) params.set("department", filters.department);
+
+  const query = params.toString();
+  return `/admin/acertadores.pdf${query ? `?${query}` : ""}`;
+}
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   let matches;
   let ranking;
   let winners;
+  let filters: WinnerFilters;
 
   try {
-    [matches, ranking, winners] = await Promise.all([getMatches(), getRanking(), getDailyWinners()]);
+    filters = buildWinnerFilters(await searchParams);
+    [matches, ranking, winners] = await Promise.all([getMatches(), getRanking(), getDailyWinners(filters)]);
   } catch (error) {
     return <SetupError error={error} />;
   }
+
+  const pdfHref = buildPdfHref(filters);
 
   return (
     <main className="min-h-screen bg-[#f7f8fc] px-4 py-6 text-[#171925] sm:px-6 lg:px-8">
@@ -148,19 +181,100 @@ export default async function AdminPage() {
             </section>
 
             <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)]">
-              <h2 className="text-xl font-black">Acertadores para sorteio</h2>
-              <p className="mt-1 text-sm text-[#62677f]">Quem acertou o placar exato dos jogos finalizados.</p>
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-black">Acertadores para sorteio</h2>
+                  <p className="mt-1 text-sm text-[#62677f]">Filtre por periodo, jogo ou departamento.</p>
+                </div>
+                <a
+                  href={pdfHref}
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-3 text-sm font-black text-white transition hover:bg-[#2745d9]"
+                >
+                  <Download className="h-4 w-4" />
+                  PDF
+                </a>
+              </div>
+
+              <form className="mb-4 grid gap-3 rounded-2xl border border-[#e1e5f2] bg-[#fbfcff] p-3">
+                <div className="flex items-center gap-2 text-sm font-black text-[#3a3d4f]">
+                  <Filter className="h-4 w-4 text-[#3857e8]" />
+                  Filtros
+                </div>
+                <label className="flex flex-col gap-1 text-xs font-black uppercase text-[#62677f]">
+                  De
+                  <input
+                    type="date"
+                    name="dateFrom"
+                    defaultValue={filters.dateFrom ?? ""}
+                    className="h-10 rounded-2xl border border-[#d9deee] bg-white px-3 text-sm font-bold text-[#171925] outline-none focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-black uppercase text-[#62677f]">
+                  Até
+                  <input
+                    type="date"
+                    name="dateTo"
+                    defaultValue={filters.dateTo ?? ""}
+                    className="h-10 rounded-2xl border border-[#d9deee] bg-white px-3 text-sm font-bold text-[#171925] outline-none focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-black uppercase text-[#62677f]">
+                  Jogo
+                  <select
+                    name="matchId"
+                    defaultValue={filters.matchId ?? ""}
+                    className="h-10 rounded-2xl border border-[#d9deee] bg-white px-3 text-sm font-bold text-[#171925] outline-none focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                  >
+                    <option value="">Todos</option>
+                    {matches.map((match) => (
+                      <option key={match.id} value={match.id}>
+                        {formatDate(match.matchDate)} · {match.homeTeam} x {match.awayTeam}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-black uppercase text-[#62677f]">
+                  Departamento
+                  <select
+                    name="department"
+                    defaultValue={filters.department ?? ""}
+                    className="h-10 rounded-2xl border border-[#d9deee] bg-white px-3 text-sm font-bold text-[#171925] outline-none focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                  >
+                    <option value="">Todos</option>
+                    {departments.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="submit"
+                    className="h-10 rounded-2xl bg-[#171925] px-3 text-sm font-black text-white transition hover:bg-black"
+                  >
+                    Filtrar
+                  </button>
+                  <Link
+                    href="/admin"
+                    className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#d9deee] bg-white px-3 text-sm font-black text-[#3a3d4f] transition hover:bg-[#f5f7fc]"
+                  >
+                    Limpar
+                  </Link>
+                </div>
+              </form>
+
               <div className="mt-4 flex flex-col gap-3">
                 {winners.length === 0 ? (
                   <p className="rounded-2xl bg-[#f5f7fc] p-4 text-sm font-semibold text-[#62677f]">
-                    Lance um resultado para aparecerem os nomes elegiveis.
+                    Nenhum acertador encontrado para os filtros atuais.
                   </p>
                 ) : (
                   winners.map((winner, index) => (
                     <div key={`${winner.matchId}-${winner.name}-${index}`} className="rounded-2xl bg-[#f5f7fc] p-3">
                       <p className="text-sm font-black">{winner.name}</p>
                       <p className="mt-1 text-xs font-semibold leading-5 text-[#62677f]">
-                        {winner.department} · {winner.matchLabel} · {winner.predictedScore}
+                        {winner.department} · {formatDate(winner.matchDate)} · {winner.matchLabel} · {winner.predictedScore}
                       </p>
                     </div>
                   ))
