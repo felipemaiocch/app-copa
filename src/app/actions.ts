@@ -1,7 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updateMatchResult, upsertParticipant, upsertPredictions } from "@/lib/data";
+import {
+  getMatches,
+  getTodayInSaoPaulo,
+  isMatchUnlocked,
+  updateMatchResult,
+  upsertParticipant,
+  upsertPredictions,
+} from "@/lib/data";
 
 function asText(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
@@ -34,7 +41,22 @@ export async function submitPredictions(_previousState: unknown, formData: FormD
   });
 
   const matchIds = formData.getAll("matchId").map(String);
-  const predictions = matchIds.map((matchId) => ({
+  const today = getTodayInSaoPaulo();
+  const matches = await getMatches();
+  const unlockedMatchIds = new Set(
+    matches.filter((match) => isMatchUnlocked(match.matchDate, today)).map((match) => match.id),
+  );
+  const allowedMatchIds = matchIds.filter((matchId) => unlockedMatchIds.has(matchId));
+
+  if (allowedMatchIds.length === 0) {
+    return {
+      ok: false,
+      participantId: participant,
+      message: "Nenhum jogo esta liberado para palpite hoje.",
+    };
+  }
+
+  const predictions = allowedMatchIds.map((matchId) => ({
     matchId,
     homeScore: asScore(formData.get(`homeScore:${matchId}`)),
     awayScore: asScore(formData.get(`awayScore:${matchId}`)),
@@ -47,7 +69,10 @@ export async function submitPredictions(_previousState: unknown, formData: FormD
   return {
     ok: true,
     participantId: participant,
-    message: "Palpites salvos.",
+    message:
+      allowedMatchIds.length === matchIds.length
+        ? "Palpites salvos."
+        : "Palpites salvos. Jogos futuros continuam bloqueados.",
   };
 }
 

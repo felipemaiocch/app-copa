@@ -154,6 +154,22 @@ function dateOnly(value: unknown) {
   return new Date(text).toISOString().slice(0, 10);
 }
 
+export function getTodayInSaoPaulo(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function isMatchUnlocked(matchDate: string, today = getTodayInSaoPaulo()) {
+  return matchDate <= today;
+}
+
 let schemaReady = false;
 let schemaPromise: Promise<void> | null = null;
 

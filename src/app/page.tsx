@@ -1,6 +1,6 @@
 import { PredictionApp } from "@/components/prediction-app";
 import { SetupError } from "@/components/setup-error";
-import { getMatches, getParticipant, getPredictions, getRanking } from "@/lib/data";
+import { getMatches, getParticipant, getPredictions, getRanking, getTodayInSaoPaulo } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +33,7 @@ export default async function Home({
       initialParticipant={participant}
       initialPredictions={predictions}
       ranking={ranking}
+      unlockedThroughDate={getTodayInSaoPaulo()}
     />
   );
 }

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { CalendarDays, CheckCircle2, Gift, Loader2, Medal, Sparkles, Trophy } from "lucide-react";
+import { CalendarDays, CheckCircle2, Gift, Loader2, Lock, Medal, Sparkles, Trophy } from "lucide-react";
 import { submitPredictions } from "@/app/actions";
 import type { Match, Participant, Prediction, RankingRow } from "@/lib/data";
 
@@ -58,11 +58,13 @@ export function PredictionApp({
   initialParticipant,
   initialPredictions,
   ranking,
+  unlockedThroughDate,
 }: {
   matches: Match[];
   initialParticipant: Participant | null;
   initialPredictions: Prediction[];
   ranking: RankingRow[];
+  unlockedThroughDate: string;
 }) {
   const [state, formAction, isPending] = useActionState(submitPredictions, initialActionState);
   const participantId = state.participantId ?? initialParticipant?.id ?? "";
@@ -70,8 +72,8 @@ export function PredictionApp({
     return Object.fromEntries(initialPredictions.map((prediction) => [prediction.matchId, prediction]));
   }, [initialPredictions]);
   const grouped = useMemo(() => groupMatches(matches), [matches]);
-  const completed = initialPredictions.length;
   const total = matches.length;
+  const unlockedTotal = matches.filter((match) => match.matchDate <= unlockedThroughDate).length;
 
   useEffect(() => {
     if (!initialParticipant?.id) {
@@ -109,7 +111,7 @@ export function PredictionApp({
                 Palpites da Copa DR Monitora
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-[#62677f] sm:text-lg">
-                Preencha seus dados, marque os placares e edite quando quiser antes dos jogos. O ranking geral e os acertadores por jogo ficam prontos automaticamente.
+                Preencha seus dados e marque os placares liberados. Novos dias de jogos abrem automaticamente quando o dia anterior passa.
               </p>
             </div>
           </div>
@@ -120,8 +122,8 @@ export function PredictionApp({
               <p className="text-xs font-bold uppercase text-[#71768d]">jogos</p>
             </div>
             <div className="rounded-2xl bg-white p-4">
-              <p className="text-3xl font-black text-[#3857e8]">{completed}</p>
-              <p className="text-xs font-bold uppercase text-[#71768d]">palpites</p>
+              <p className="text-3xl font-black text-[#3857e8]">{unlockedTotal}</p>
+              <p className="text-xs font-bold uppercase text-[#71768d]">liberados</p>
             </div>
             <div className="rounded-2xl bg-white p-4">
               <p className="text-3xl font-black text-[#3857e8]">6</p>
@@ -189,7 +191,9 @@ export function PredictionApp({
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <h2 className="text-3xl font-black">Jogos</h2>
-                  <p className="mt-1 text-sm text-[#62677f]">Placar exato vale 6 pontos. Vencedor ou empate vale 3.</p>
+                  <p className="mt-1 text-sm text-[#62677f]">
+                    Palpites liberados até {formatDate(unlockedThroughDate)}. Placar exato vale 6 pontos.
+                  </p>
                 </div>
               </div>
 
@@ -202,17 +206,28 @@ export function PredictionApp({
                   <div className="grid gap-4">
                     {dateMatches.map((match) => {
                       const prediction = predictionsByMatch[match.id];
+                      const isUnlocked = match.matchDate <= unlockedThroughDate;
                       return (
                         <article
                           key={match.id}
-                          className="overflow-hidden rounded-[24px] border border-[#dfe3f2] bg-white shadow-[0_12px_36px_rgba(29,35,73,0.05)]"
+                          className={`overflow-hidden rounded-[24px] border border-[#dfe3f2] bg-white shadow-[0_12px_36px_rgba(29,35,73,0.05)] ${
+                            isUnlocked ? "" : "opacity-75"
+                          }`}
                         >
-                          <input type="hidden" name="matchId" value={match.id} />
+                          {isUnlocked && <input type="hidden" name="matchId" value={match.id} />}
                           <div className="flex items-center justify-between border-b border-[#e4e8f5] px-5 py-4">
                             <span className="text-base font-black">{match.groupName}</span>
-                            <span className="rounded-full bg-[#edf2ff] px-3 py-1 text-sm font-black text-[#3857e8]">
-                              {match.kickoffTime}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {!isUnlocked && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f5fa] px-3 py-1 text-xs font-black text-[#71768d]">
+                                  <Lock className="h-3.5 w-3.5" />
+                                  bloqueado
+                                </span>
+                              )}
+                              <span className="rounded-full bg-[#edf2ff] px-3 py-1 text-sm font-black text-[#3857e8]">
+                                {match.kickoffTime}
+                              </span>
+                            </div>
                           </div>
                           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-5 sm:px-6">
                             <Team flag={match.homeFlag} name={match.homeTeam} />
@@ -220,12 +235,23 @@ export function PredictionApp({
                             <Team flag={match.awayFlag} name={match.awayTeam} alignRight />
                           </div>
                           <div className="flex items-center justify-between gap-3 border-t border-[#e4e8f5] bg-[#fbfcff] px-4 py-4 sm:px-6">
-                            <span className="text-sm font-black sm:text-base">Seu palpite</span>
-                            <div className="flex items-center gap-2">
-                              <ScoreInput name={`homeScore:${match.id}`} defaultValue={prediction?.homeScore ?? 0} />
-                              <span className="font-black text-[#62677f]">-</span>
-                              <ScoreInput name={`awayScore:${match.id}`} defaultValue={prediction?.awayScore ?? 0} />
-                            </div>
+                            {isUnlocked ? (
+                              <>
+                                <span className="text-sm font-black sm:text-base">Seu palpite</span>
+                                <div className="flex items-center gap-2">
+                                  <ScoreInput name={`homeScore:${match.id}`} defaultValue={prediction?.homeScore ?? 0} />
+                                  <span className="font-black text-[#62677f]">-</span>
+                                  <ScoreInput name={`awayScore:${match.id}`} defaultValue={prediction?.awayScore ?? 0} />
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex w-full items-center justify-between gap-3">
+                                <span className="text-sm font-black sm:text-base">Palpite bloqueado</span>
+                                <span className="text-right text-xs font-bold text-[#62677f] sm:text-sm">
+                                  Libera em {formatDate(match.matchDate)}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </article>
                       );
@@ -237,7 +263,7 @@ export function PredictionApp({
 
             <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-3xl border border-[#dfe3f2] bg-white/95 p-4 shadow-[0_18px_55px_rgba(29,35,73,0.18)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
               <p className={`text-sm font-bold ${state.ok ? "text-emerald-700" : "text-[#62677f]"}`}>
-                {state.message || "Revise os placares e salve seus palpites."}
+                {state.message || `Revise os ${unlockedTotal} jogos liberados e salve seus palpites.`}
               </p>
               <button
                 type="submit"
