@@ -1,13 +1,13 @@
 import { PredictionApp } from "@/components/prediction-app";
 import { SetupError } from "@/components/setup-error";
-import { getMatches, getParticipant, getPredictions, getRanking, getTodayInSaoPaulo } from "@/lib/data";
+import { getMatches, getParticipantByEmail, getPredictions, getRanking, getTodayInSaoPaulo } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: Promise<{ participant?: string }>;
+  searchParams?: Promise<{ email?: string; participant?: string }>;
 }) {
   let matches;
   let participant;
@@ -16,11 +16,12 @@ export default async function Home({
 
   try {
     const params = await searchParams;
-    const participantId = params?.participant;
+    const email = params?.email || params?.participant;
+    participant = await getParticipantByEmail(email);
     [matches, participant, predictions, ranking] = await Promise.all([
       getMatches(),
-      getParticipant(participantId),
-      getPredictions(participantId),
+      Promise.resolve(participant),
+      getPredictions(participant?.id),
       getRanking(),
     ]);
   } catch (error) {
@@ -34,6 +35,7 @@ export default async function Home({
       initialPredictions={predictions}
       ranking={ranking}
       unlockedThroughDate={getTodayInSaoPaulo()}
+      nowIso={new Date().toISOString()}
     />
   );
 }

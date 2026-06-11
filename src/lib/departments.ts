@@ -8,6 +8,7 @@ export const departments = [
   "TÉCNICA",
   "FACILITIES",
   "QUALIDADE",
+  "RECONECTA",
   "SAC",
   "TI",
   "PIRAPORA",

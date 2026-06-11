@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import {
   getMatches,
-  getTodayInSaoPaulo,
-  isMatchUnlocked,
+  isPredictionOpen,
+  normalizeEmail,
   updateMatchResult,
   upsertParticipant,
   upsertPredictions,
@@ -24,27 +24,22 @@ function asScore(value: FormDataEntryValue | null) {
 }
 
 export async function submitPredictions(_previousState: unknown, formData: FormData) {
-  const firstName = asText(formData.get("firstName"));
-  const lastName = asText(formData.get("lastName"));
+  const email = normalizeEmail(asText(formData.get("email")));
   const department = asText(formData.get("department"));
-  const participantId = asText(formData.get("participantId"));
 
-  if (!firstName || !lastName || !department) {
-    return { ok: false, message: "Informe nome, sobrenome e departamento." };
+  if (!email || !email.includes("@") || !department) {
+    return { ok: false, message: "Informe um e-mail valido e o departamento." };
   }
 
   const participant = await upsertParticipant({
-    participantId: participantId || null,
-    firstName,
-    lastName,
+    email,
     department,
   });
 
   const matchIds = formData.getAll("matchId").map(String);
-  const today = getTodayInSaoPaulo();
   const matches = await getMatches();
   const unlockedMatchIds = new Set(
-    matches.filter((match) => isMatchUnlocked(match.matchDate, today)).map((match) => match.id),
+    matches.filter((match) => isPredictionOpen(match)).map((match) => match.id),
   );
   const allowedMatchIds = matchIds.filter((matchId) => unlockedMatchIds.has(matchId));
 
@@ -52,7 +47,8 @@ export async function submitPredictions(_previousState: unknown, formData: FormD
     return {
       ok: false,
       participantId: participant,
-      message: "Nenhum jogo esta liberado para palpite hoje.",
+      email,
+      message: "Nenhum jogo esta aberto para palpite agora.",
     };
   }
 
@@ -69,10 +65,11 @@ export async function submitPredictions(_previousState: unknown, formData: FormD
   return {
     ok: true,
     participantId: participant,
+    email,
     message:
       allowedMatchIds.length === matchIds.length
         ? "Palpites salvos."
-        : "Palpites salvos. Jogos futuros continuam bloqueados.",
+        : "Palpites salvos. Jogos bloqueados ou encerrados nao foram alterados.",
   };
 }
 

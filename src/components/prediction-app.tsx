@@ -11,6 +11,7 @@ type ActionState = {
   ok: boolean;
   message: string;
   participantId?: string;
+  email?: string;
 };
 
 const initialActionState: ActionState = {
@@ -33,41 +34,78 @@ function groupMatches(matches: Match[]) {
   }, {});
 }
 
+function getKickoffDate(match: Match) {
+  return new Date(`${match.matchDate}T${match.kickoffTime}:00-03:00`);
+}
+
+function getMatchState(match: Match, unlockedThroughDate: string, nowIso: string) {
+  if (match.matchDate > unlockedThroughDate) {
+    return {
+      isOpen: false,
+      label: "bloqueado",
+      message: `Libera em ${formatDate(match.matchDate)}`,
+    };
+  }
+
+  const cutoff = getKickoffDate(match).getTime() - 2 * 60 * 60 * 1000;
+  if (new Date(nowIso).getTime() >= cutoff) {
+    return {
+      isOpen: false,
+      label: "encerrado",
+      message: "Edição encerrada 2h antes do jogo",
+    };
+  }
+
+  return {
+    isOpen: true,
+    label: "aberto",
+    message: "Aberto para palpite",
+  };
+}
+
 export function PredictionApp({
   matches,
   initialParticipant,
   initialPredictions,
   ranking,
   unlockedThroughDate,
+  nowIso,
 }: {
   matches: Match[];
   initialParticipant: Participant | null;
   initialPredictions: Prediction[];
   ranking: RankingRow[];
   unlockedThroughDate: string;
+  nowIso: string;
 }) {
   const [state, formAction, isPending] = useActionState(submitPredictions, initialActionState);
-  const participantId = state.participantId ?? initialParticipant?.id ?? "";
+  const email = state.email ?? initialParticipant?.email ?? "";
   const predictionsByMatch = useMemo(() => {
     return Object.fromEntries(initialPredictions.map((prediction) => [prediction.matchId, prediction]));
   }, [initialPredictions]);
   const grouped = useMemo(() => groupMatches(matches), [matches]);
   const total = matches.length;
-  const unlockedTotal = matches.filter((match) => match.matchDate <= unlockedThroughDate).length;
+  const openTotal = matches.filter((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen).length;
 
   useEffect(() => {
-    if (!initialParticipant?.id) {
-      const stored = window.localStorage.getItem("app-copa-participant");
-      if (stored) window.location.replace(`/?participant=${stored}`);
+    if (!initialParticipant?.email) {
+      const stored = window.localStorage.getItem("app-copa-email");
+      if (stored) window.location.replace(`/?email=${encodeURIComponent(stored)}`);
     }
-  }, [initialParticipant?.id]);
+  }, [initialParticipant?.email]);
 
   useEffect(() => {
-    if (state.ok && state.participantId) {
-      window.localStorage.setItem("app-copa-participant", state.participantId);
-      window.history.replaceState(null, "", `/?participant=${state.participantId}`);
+    if (state.ok && state.email) {
+      window.localStorage.setItem("app-copa-email", state.email);
+      window.history.replaceState(null, "", `/?email=${encodeURIComponent(state.email)}`);
     }
   }, [state]);
+
+  function loadEmailPredictions() {
+    const input = document.querySelector<HTMLInputElement>('input[name="email"]');
+    const value = input?.value.trim().toLowerCase();
+    if (value) window.location.href = `/?email=${encodeURIComponent(value)}`;
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f8fc] text-[#171925]">
@@ -102,8 +140,8 @@ export function PredictionApp({
               <p className="text-xs font-bold uppercase text-[#71768d]">jogos</p>
             </div>
             <div className="rounded-2xl bg-white p-4">
-              <p className="text-3xl font-black text-[#3857e8]">{unlockedTotal}</p>
-              <p className="text-xs font-bold uppercase text-[#71768d]">liberados</p>
+              <p className="text-3xl font-black text-[#3857e8]">{openTotal}</p>
+              <p className="text-xs font-bold uppercase text-[#71768d]">abertos</p>
             </div>
             <div className="rounded-2xl bg-white p-4">
               <p className="text-3xl font-black text-[#3857e8]">6</p>
@@ -114,8 +152,6 @@ export function PredictionApp({
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <form action={formAction} className="flex flex-col gap-6">
-            <input type="hidden" name="participantId" value={participantId} />
-
             <section className="rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-6">
               <div className="mb-5 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3857e8]">
@@ -123,28 +159,33 @@ export function PredictionApp({
                 </div>
                 <div>
                   <h2 className="text-xl font-black">Seus dados</h2>
-                  <p className="text-sm text-[#62677f]">Use nome e departamento para aparecer no ranking.</p>
+                  <p className="text-sm text-[#62677f]">Use o e-mail do NEO para recuperar seus palpites.</p>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                  Nome
-                  <input
-                    name="firstName"
-                    defaultValue={initialParticipant?.firstName ?? ""}
-                    required
-                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                  />
-                </label>
-                <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                  Sobrenome
-                  <input
-                    name="lastName"
-                    defaultValue={initialParticipant?.lastName ?? ""}
-                    required
-                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                  />
+                  E-mail NEO
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px]">
+                    <input
+                      name="email"
+                      type="email"
+                      defaultValue={email}
+                      placeholder="nome@empresa.com"
+                      required
+                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={loadEmailPredictions}
+                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff]"
+                    >
+                      Carregar
+                    </button>
+                  </div>
+                  <span className="text-xs font-semibold text-[#62677f]">
+                    Digite o e-mail e clique em Carregar para recuperar palpites já salvos.
+                  </span>
                 </label>
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                   Departamento
@@ -165,6 +206,18 @@ export function PredictionApp({
                   </select>
                 </label>
               </div>
+
+              {state.message && (
+                <div
+                  className={`mt-4 rounded-2xl border p-4 text-sm font-black ${
+                    state.ok
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {state.message}
+                </div>
+              )}
             </section>
 
             <section className="flex flex-col gap-5">
@@ -172,7 +225,7 @@ export function PredictionApp({
                 <div>
                   <h2 className="text-3xl font-black">Jogos</h2>
                   <p className="mt-1 text-sm text-[#62677f]">
-                    Palpites liberados até {formatDate(unlockedThroughDate)}. Placar exato vale 6 pontos.
+                    Cada jogo pode ser alterado até 2h antes do início. Placar exato vale 6 pontos.
                   </p>
                 </div>
               </div>
@@ -186,22 +239,22 @@ export function PredictionApp({
                   <div className="grid gap-4">
                     {dateMatches.map((match) => {
                       const prediction = predictionsByMatch[match.id];
-                      const isUnlocked = match.matchDate <= unlockedThroughDate;
+                      const matchState = getMatchState(match, unlockedThroughDate, nowIso);
                       return (
                         <article
                           key={match.id}
                           className={`overflow-hidden rounded-[24px] border border-[#dfe3f2] bg-white shadow-[0_12px_36px_rgba(29,35,73,0.05)] ${
-                            isUnlocked ? "" : "opacity-75"
+                            matchState.isOpen ? "" : "opacity-75"
                           }`}
                         >
-                          {isUnlocked && <input type="hidden" name="matchId" value={match.id} />}
+                          {matchState.isOpen && <input type="hidden" name="matchId" value={match.id} />}
                           <div className="flex items-center justify-between border-b border-[#e4e8f5] px-5 py-4">
                             <span className="text-base font-black">{match.groupName}</span>
                             <div className="flex items-center gap-2">
-                              {!isUnlocked && (
+                              {!matchState.isOpen && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f5fa] px-3 py-1 text-xs font-black text-[#71768d]">
                                   <Lock className="h-3.5 w-3.5" />
-                                  bloqueado
+                                  {matchState.label}
                                 </span>
                               )}
                               <span className="rounded-full bg-[#edf2ff] px-3 py-1 text-sm font-black text-[#3857e8]">
@@ -215,7 +268,7 @@ export function PredictionApp({
                             <Team flag={match.awayFlag} name={match.awayTeam} alignRight />
                           </div>
                           <div className="flex items-center justify-between gap-3 border-t border-[#e4e8f5] bg-[#fbfcff] px-4 py-4 sm:px-6">
-                            {isUnlocked ? (
+                            {matchState.isOpen ? (
                               <>
                                 <span className="text-sm font-black sm:text-base">Seu palpite</span>
                                 <div className="flex items-center gap-2">
@@ -228,7 +281,7 @@ export function PredictionApp({
                               <div className="flex w-full items-center justify-between gap-3">
                                 <span className="text-sm font-black sm:text-base">Palpite bloqueado</span>
                                 <span className="text-right text-xs font-bold text-[#62677f] sm:text-sm">
-                                  Libera em {formatDate(match.matchDate)}
+                                  {matchState.message}
                                 </span>
                               </div>
                             )}
@@ -243,7 +296,7 @@ export function PredictionApp({
 
             <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-3xl border border-[#dfe3f2] bg-white/95 p-4 shadow-[0_18px_55px_rgba(29,35,73,0.18)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
               <p className={`text-sm font-bold ${state.ok ? "text-emerald-700" : "text-[#62677f]"}`}>
-                {state.message || `Revise os ${unlockedTotal} jogos liberados e salve seus palpites.`}
+                {state.message || `Revise os ${openTotal} jogos abertos e salve seus palpites.`}
               </p>
               <button
                 type="submit"

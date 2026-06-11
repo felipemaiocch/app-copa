@@ -22,8 +22,7 @@ export type Prediction = {
 
 export type Participant = {
   id: string;
-  firstName: string;
-  lastName: string;
+  email: string;
   department: string;
 };
 
@@ -179,6 +178,21 @@ export function isMatchUnlocked(matchDate: string, today = getTodayInSaoPaulo())
   return matchDate <= today;
 }
 
+export function getNowInSaoPaulo() {
+  return new Date();
+}
+
+function getKickoffDate(matchDate: string, kickoffTime: string) {
+  return new Date(`${matchDate}T${kickoffTime}:00-03:00`);
+}
+
+export function isPredictionOpen(match: Pick<Match, "matchDate" | "kickoffTime">, now = getNowInSaoPaulo()) {
+  const today = getTodayInSaoPaulo(now);
+  const cutoff = getKickoffDate(match.matchDate, match.kickoffTime).getTime() - 2 * 60 * 60 * 1000;
+
+  return isMatchUnlocked(match.matchDate, today) && now.getTime() < cutoff;
+}
+
 let schemaReady = false;
 let schemaPromise: Promise<void> | null = null;
 
@@ -198,12 +212,26 @@ async function setupSchema() {
   await sql`
     CREATE TABLE IF NOT EXISTS participants (
       id text PRIMARY KEY,
+      email text,
       first_name text NOT NULL,
       last_name text NOT NULL,
       department text NOT NULL,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     )
+  `;
+
+  await sql`ALTER TABLE participants ADD COLUMN IF NOT EXISTS email text`;
+
+  await sql`
+    UPDATE participants
+    SET email = lower(concat(id, '@legacy.local'))
+    WHERE email IS NULL OR trim(email) = ''
+  `;
+
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS participants_email_unique_idx
+    ON participants (lower(email))
   `;
 
   await sql`
@@ -325,14 +353,15 @@ export async function getMatches(): Promise<Match[]> {
   return rows.map(mapMatch);
 }
 
-export async function getParticipant(id?: string | null): Promise<Participant | null> {
-  if (!id) return null;
+export async function getParticipantByEmail(email?: string | null): Promise<Participant | null> {
+  if (!email) return null;
   await ensureSchema();
   const sql = getSql();
+  const normalizedEmail = normalizeEmail(email);
   const rows = rowsOf(await sql`
-    SELECT id, first_name, last_name, department
+    SELECT id, email, department
     FROM participants
-    WHERE id = ${id}
+    WHERE lower(email) = ${normalizedEmail}
     LIMIT 1
   `);
 
@@ -341,10 +370,13 @@ export async function getParticipant(id?: string | null): Promise<Participant | 
 
   return {
     id: String(row.id),
-    firstName: String(row.first_name),
-    lastName: String(row.last_name),
+    email: String(row.email),
     department: String(row.department),
   };
+}
+
+export function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
 }
 
 export async function getPredictions(participantId?: string | null): Promise<Prediction[]> {
@@ -365,27 +397,33 @@ export async function getPredictions(participantId?: string | null): Promise<Pre
 }
 
 export async function upsertParticipant(input: {
-  participantId?: string | null;
-  firstName: string;
-  lastName: string;
+  email: string;
   department: string;
 }) {
   await ensureSchema();
   const sql = getSql();
-  const id = input.participantId || makeId("person");
+  const email = normalizeEmail(input.email);
+  const id = makeId("person");
+  const namePart = email.split("@")[0] || email;
 
   await sql`
-    INSERT INTO participants (id, first_name, last_name, department, updated_at)
-    VALUES (${id}, ${input.firstName}, ${input.lastName}, ${input.department}, now())
-    ON CONFLICT (id)
+    INSERT INTO participants (id, email, first_name, last_name, department, updated_at)
+    VALUES (${id}, ${email}, ${namePart}, '', ${input.department}, now())
+    ON CONFLICT (lower(email))
     DO UPDATE SET
-      first_name = excluded.first_name,
-      last_name = excluded.last_name,
       department = excluded.department,
       updated_at = now()
+    RETURNING id
   `;
 
-  return id;
+  const participant = rowsOf(await sql`
+    SELECT id
+    FROM participants
+    WHERE lower(email) = ${email}
+    LIMIT 1
+  `);
+
+  return String(participant[0]?.id);
 }
 
 export async function upsertPredictions(participantId: string, predictions: Prediction[]) {
@@ -435,7 +473,8 @@ export async function getRanking(): Promise<RankingRow[]> {
   const rows = rowsOf(await sql`
     SELECT
       p.id AS participant_id,
-      concat(p.first_name, ' ', p.last_name) AS name,
+      COALESCE(NULLIF(p.email, ''), concat(p.first_name, ' ', p.last_name)) AS name,
+      p.email,
       p.department,
       COALESCE(SUM(
         CASE
@@ -467,7 +506,7 @@ export async function getRanking(): Promise<RankingRow[]> {
     FROM participants p
     LEFT JOIN predictions pr ON pr.participant_id = p.id
     LEFT JOIN matches m ON m.id = pr.match_id
-    GROUP BY p.id, p.first_name, p.last_name, p.department
+    GROUP BY p.id, p.email, p.first_name, p.last_name, p.department
     ORDER BY points DESC, exact_hits DESC, winner_hits DESC, name ASC
     LIMIT 50
   `);
@@ -493,7 +532,7 @@ export async function getDailyWinners(filters: WinnerFilters = {}): Promise<Dail
       concat(m.home_team, ' x ', m.away_team) AS match_label,
       m.match_date,
       m.kickoff_time,
-      concat(p.first_name, ' ', p.last_name) AS name,
+      COALESCE(NULLIF(p.email, ''), concat(p.first_name, ' ', p.last_name)) AS name,
       p.department,
       concat(pr.home_score, ' - ', pr.away_score) AS predicted_score,
       concat(m.home_score, ' - ', m.away_score) AS final_score
