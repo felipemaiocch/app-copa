@@ -57,6 +57,9 @@ type SeedMatch = {
   awayFlag: string;
 };
 
+const ENGLAND_FLAG = "\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}";
+const SCOTLAND_FLAG = "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}";
+
 const seedMatches = [
   { id: "match-001", date: "2026-06-11", time: "16:00", group: "Grupo A", home: "México", away: "África do Sul", homeFlag: "🇲🇽", awayFlag: "🇿🇦" },
   { id: "match-002", date: "2026-06-11", time: "23:00", group: "Grupo A", home: "República da Coreia", away: "Tchéquia", homeFlag: "🇰🇷", awayFlag: "🇨🇿" },
@@ -65,7 +68,7 @@ const seedMatches = [
   { id: "match-005", date: "2026-06-13", time: "01:00", group: "Grupo D", home: "Austrália", away: "Turquia", homeFlag: "🇦🇺", awayFlag: "🇹🇷" },
   { id: "match-006", date: "2026-06-13", time: "16:00", group: "Grupo B", home: "Catar", away: "Suíça", homeFlag: "🇶🇦", awayFlag: "🇨🇭" },
   { id: "match-007", date: "2026-06-13", time: "19:00", group: "Grupo C", home: "Brasil", away: "Marrocos", homeFlag: "🇧🇷", awayFlag: "🇲🇦" },
-  { id: "match-008", date: "2026-06-13", time: "22:00", group: "Grupo C", home: "Haiti", away: "Escócia", homeFlag: "🇭🇹", awayFlag: "🏴" },
+  { id: "match-008", date: "2026-06-13", time: "22:00", group: "Grupo C", home: "Haiti", away: "Escócia", homeFlag: "🇭🇹", awayFlag: SCOTLAND_FLAG },
   { id: "match-009", date: "2026-06-14", time: "14:00", group: "Grupo E", home: "Alemanha", away: "Curaçao", homeFlag: "🇩🇪", awayFlag: "🇨🇼" },
   { id: "match-010", date: "2026-06-14", time: "17:00", group: "Grupo F", home: "Holanda", away: "Japão", homeFlag: "🇳🇱", awayFlag: "🇯🇵" },
   { id: "match-011", date: "2026-06-14", time: "20:00", group: "Grupo E", home: "Costa do Marfim", away: "Equador", homeFlag: "🇨🇮", awayFlag: "🇪🇨" },
@@ -79,7 +82,7 @@ const seedMatches = [
   { id: "match-019", date: "2026-06-16", time: "22:00", group: "Grupo J", home: "Argentina", away: "Argélia", homeFlag: "🇦🇷", awayFlag: "🇩🇿" },
   { id: "match-020", date: "2026-06-17", time: "01:00", group: "Grupo J", home: "Áustria", away: "Jordânia", homeFlag: "🇦🇹", awayFlag: "🇯🇴" },
   { id: "match-021", date: "2026-06-17", time: "14:00", group: "Grupo K", home: "Portugal", away: "República Democrática do Congo", homeFlag: "🇵🇹", awayFlag: "🇨🇩" },
-  { id: "match-022", date: "2026-06-17", time: "17:00", group: "Grupo L", home: "Inglaterra", away: "Croácia", homeFlag: "🏴", awayFlag: "🇭🇷" },
+  { id: "match-022", date: "2026-06-17", time: "17:00", group: "Grupo L", home: "Inglaterra", away: "Croácia", homeFlag: ENGLAND_FLAG, awayFlag: "🇭🇷" },
   { id: "match-023", date: "2026-06-17", time: "20:00", group: "Grupo L", home: "Gana", away: "Panamá", homeFlag: "🇬🇭", awayFlag: "🇵🇦" },
   { id: "match-024", date: "2026-06-17", time: "23:00", group: "Grupo K", home: "Uzbequistão", away: "Colômbia", homeFlag: "🇺🇿", awayFlag: "🇨🇴" },
   { id: "match-025", date: "2026-06-18", time: "13:00", group: "Grupo A", home: "Tchéquia", away: "África do Sul", homeFlag: "🇨🇿", awayFlag: "🇿🇦" },
@@ -87,7 +90,7 @@ const seedMatches = [
   { id: "match-027", date: "2026-06-18", time: "19:00", group: "Grupo B", home: "Canadá", away: "Catar", homeFlag: "🇨🇦", awayFlag: "🇶🇦" },
   { id: "match-028", date: "2026-06-18", time: "22:00", group: "Grupo A", home: "México", away: "República da Coreia", homeFlag: "🇲🇽", awayFlag: "🇰🇷" },
   { id: "match-029", date: "2026-06-19", time: "16:00", group: "Grupo D", home: "Estados Unidos", away: "Austrália", homeFlag: "🇺🇸", awayFlag: "🇦🇺" },
-  { id: "match-030", date: "2026-06-19", time: "19:00", group: "Grupo C", home: "Escócia", away: "Marrocos", homeFlag: "🏴", awayFlag: "🇲🇦" },
+  { id: "match-030", date: "2026-06-19", time: "19:00", group: "Grupo C", home: "Escócia", away: "Marrocos", homeFlag: SCOTLAND_FLAG, awayFlag: "🇲🇦" },
   { id: "match-031", date: "2026-06-19", time: "21:30", group: "Grupo C", home: "Brasil", away: "Haiti", homeFlag: "🇧🇷", awayFlag: "🇭🇹" },
   { id: "match-032", date: "2026-06-20", time: "01:00", group: "Grupo D", home: "Turquia", away: "Paraguai", homeFlag: "🇹🇷", awayFlag: "🇵🇾" },
   { id: "match-033", date: "2026-06-20", time: "14:00", group: "Grupo F", home: "Holanda", away: "Suécia", homeFlag: "🇳🇱", awayFlag: "🇸🇪" },
@@ -103,12 +106,12 @@ const seedMatches = [
   { id: "match-043", date: "2026-06-22", time: "21:00", group: "Grupo I", home: "Noruega", away: "Senegal", homeFlag: "🇳🇴", awayFlag: "🇸🇳" },
   { id: "match-044", date: "2026-06-23", time: "00:00", group: "Grupo J", home: "Jordânia", away: "Argélia", homeFlag: "🇯🇴", awayFlag: "🇩🇿" },
   { id: "match-045", date: "2026-06-23", time: "14:00", group: "Grupo K", home: "Portugal", away: "Uzbequistão", homeFlag: "🇵🇹", awayFlag: "🇺🇿" },
-  { id: "match-046", date: "2026-06-23", time: "17:00", group: "Grupo L", home: "Inglaterra", away: "Gana", homeFlag: "🏴", awayFlag: "🇬🇭" },
+  { id: "match-046", date: "2026-06-23", time: "17:00", group: "Grupo L", home: "Inglaterra", away: "Gana", homeFlag: ENGLAND_FLAG, awayFlag: "🇬🇭" },
   { id: "match-047", date: "2026-06-23", time: "20:00", group: "Grupo L", home: "Panamá", away: "Croácia", homeFlag: "🇵🇦", awayFlag: "🇭🇷" },
   { id: "match-048", date: "2026-06-23", time: "23:00", group: "Grupo K", home: "Colômbia", away: "República Democrática do Congo", homeFlag: "🇨🇴", awayFlag: "🇨🇩" },
   { id: "match-049", date: "2026-06-24", time: "16:00", group: "Grupo B", home: "Suíça", away: "Canadá", homeFlag: "🇨🇭", awayFlag: "🇨🇦" },
   { id: "match-050", date: "2026-06-24", time: "16:00", group: "Grupo B", home: "Bósnia e Herzegovina", away: "Catar", homeFlag: "🇧🇦", awayFlag: "🇶🇦" },
-  { id: "match-051", date: "2026-06-24", time: "19:00", group: "Grupo C", home: "Escócia", away: "Brasil", homeFlag: "🏴", awayFlag: "🇧🇷" },
+  { id: "match-051", date: "2026-06-24", time: "19:00", group: "Grupo C", home: "Escócia", away: "Brasil", homeFlag: SCOTLAND_FLAG, awayFlag: "🇧🇷" },
   { id: "match-052", date: "2026-06-24", time: "19:00", group: "Grupo C", home: "Marrocos", away: "Haiti", homeFlag: "🇲🇦", awayFlag: "🇭🇹" },
   { id: "match-053", date: "2026-06-24", time: "22:00", group: "Grupo A", home: "Tchéquia", away: "México", homeFlag: "🇨🇿", awayFlag: "🇲🇽" },
   { id: "match-054", date: "2026-06-24", time: "22:00", group: "Grupo A", home: "África do Sul", away: "República da Coreia", homeFlag: "🇿🇦", awayFlag: "🇰🇷" },
@@ -124,7 +127,7 @@ const seedMatches = [
   { id: "match-064", date: "2026-06-26", time: "21:00", group: "Grupo H", home: "Uruguai", away: "Espanha", homeFlag: "🇺🇾", awayFlag: "🇪🇸" },
   { id: "match-065", date: "2026-06-27", time: "00:00", group: "Grupo G", home: "Egito", away: "República Islâmica do Irã", homeFlag: "🇪🇬", awayFlag: "🇮🇷" },
   { id: "match-066", date: "2026-06-27", time: "00:00", group: "Grupo G", home: "Nova Zelândia", away: "Bélgica", homeFlag: "🇳🇿", awayFlag: "🇧🇪" },
-  { id: "match-067", date: "2026-06-27", time: "18:00", group: "Grupo L", home: "Panamá", away: "Inglaterra", homeFlag: "🇵🇦", awayFlag: "🏴" },
+  { id: "match-067", date: "2026-06-27", time: "18:00", group: "Grupo L", home: "Panamá", away: "Inglaterra", homeFlag: "🇵🇦", awayFlag: ENGLAND_FLAG },
   { id: "match-068", date: "2026-06-27", time: "18:00", group: "Grupo L", home: "Croácia", away: "Gana", homeFlag: "🇭🇷", awayFlag: "🇬🇭" },
   { id: "match-069", date: "2026-06-27", time: "20:30", group: "Grupo K", home: "Colômbia", away: "Portugal", homeFlag: "🇨🇴", awayFlag: "🇵🇹" },
   { id: "match-070", date: "2026-06-27", time: "20:30", group: "Grupo K", home: "República Democrática do Congo", away: "Uzbequistão", homeFlag: "🇨🇩", awayFlag: "🇺🇿" },
@@ -230,6 +233,8 @@ async function setupSchema() {
     await seedOfficialMatches();
   } else if (matchCount < seedMatches.length && predictionCount === 0) {
     await sql`DELETE FROM matches`;
+    await seedOfficialMatches();
+  } else {
     await seedOfficialMatches();
   }
 
