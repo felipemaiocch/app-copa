@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo } from "react";
+import { useActionState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import {
   CalendarDays,
@@ -76,6 +76,42 @@ function getMatchState(match: Match, unlockedThroughDate: string, nowIso: string
   };
 }
 
+function getPredictionResult(match: Match, prediction?: Prediction) {
+  if (!prediction || match.status !== "finished" || match.homeScore === null || match.awayScore === null) {
+    return null;
+  }
+
+  const exact = prediction.homeScore === match.homeScore && prediction.awayScore === match.awayScore;
+  const sameOutcome =
+    Math.sign(prediction.homeScore - prediction.awayScore) === Math.sign(match.homeScore - match.awayScore);
+
+  if (exact) {
+    return {
+      points: 6,
+      label: "Cravou o placar",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    };
+  }
+
+  if (sameOutcome) {
+    return {
+      points: 3,
+      label: "Acertou o resultado",
+      className: "border-blue-200 bg-blue-50 text-blue-800",
+    };
+  }
+
+  return {
+    points: 0,
+    label: "Errou",
+    className: "border-slate-200 bg-slate-50 text-slate-700",
+  };
+}
+
+function dateHasOpenMatches(matches: Match[], unlockedThroughDate: string, nowIso: string) {
+  return matches.some((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen);
+}
+
 export function PredictionApp({
   matches,
   initialParticipant,
@@ -117,6 +153,33 @@ export function PredictionApp({
   }, [initialPredictions, matches]);
   const total = matches.length;
   const openTotal = matches.filter((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen).length;
+
+  useEffect(() => {
+    const preventZoom = (event: Event) => event.preventDefault();
+    const preventCtrlWheel = (event: WheelEvent) => {
+      if (event.ctrlKey) event.preventDefault();
+    };
+    let lastTouchEnd = 0;
+    const preventDoubleTapZoom = (event: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) event.preventDefault();
+      lastTouchEnd = now;
+    };
+
+    document.addEventListener("gesturestart", preventZoom);
+    document.addEventListener("gesturechange", preventZoom);
+    document.addEventListener("gestureend", preventZoom);
+    document.addEventListener("wheel", preventCtrlWheel, { passive: false });
+    document.addEventListener("touchend", preventDoubleTapZoom, { passive: false });
+
+    return () => {
+      document.removeEventListener("gesturestart", preventZoom);
+      document.removeEventListener("gesturechange", preventZoom);
+      document.removeEventListener("gestureend", preventZoom);
+      document.removeEventListener("wheel", preventCtrlWheel);
+      document.removeEventListener("touchend", preventDoubleTapZoom);
+    };
+  }, []);
 
   return (
     <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f7f8fc] text-[#171925]">
@@ -179,7 +242,7 @@ export function PredictionApp({
         </details>
 
         <div className="grid min-w-0 max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <form action={formAction} className="flex min-w-0 max-w-full flex-col gap-6">
+          <form action={formAction} className="flex min-w-0 max-w-full flex-col gap-6 pb-28 lg:pb-0">
             <section id="dados" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-6">
               <div className="mb-5 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3857e8]">
@@ -388,16 +451,33 @@ export function PredictionApp({
                 </div>
               </div>
 
-              {Object.entries(grouped).map(([date, dateMatches]) => (
-                <div key={date} className="flex flex-col gap-4">
-                  <h3 className="flex items-center gap-2 text-lg font-black">
-                    <CalendarDays className="h-5 w-5 text-[#3857e8]" />
-                    {formatDate(date)}
-                  </h3>
-                  <div className="grid gap-4">
+              {Object.entries(grouped).map(([date, dateMatches]) => {
+                const dateOpenTotal = dateMatches.filter((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen).length;
+                const datePredictionTotal = dateMatches.filter((match) => predictionsByMatch[match.id]).length;
+                const openByDefault = dateHasOpenMatches(dateMatches, unlockedThroughDate, nowIso);
+
+                return (
+                  <details
+                    key={date}
+                    open={openByDefault}
+                    className="overflow-hidden rounded-[24px] border border-[#dfe3f2] bg-white shadow-[0_12px_36px_rgba(29,35,73,0.05)]"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 marker:hidden sm:px-5">
+                      <span className="flex min-w-0 items-center gap-2 text-lg font-black">
+                        <CalendarDays className="h-5 w-5 shrink-0 text-[#3857e8]" />
+                        <span className="truncate">{formatDate(date)}</span>
+                      </span>
+                      <span className="shrink-0 rounded-full bg-[#edf2ff] px-3 py-1 text-xs font-black text-[#3857e8]">
+                        {dateOpenTotal > 0
+                          ? `${dateOpenTotal} aberto${dateOpenTotal > 1 ? "s" : ""}`
+                          : `${datePredictionTotal}/${dateMatches.length} palpites`}
+                      </span>
+                    </summary>
+                    <div className="grid gap-4 border-t border-[#e4e8f5] bg-[#fbfcff] p-3 sm:p-4">
                     {dateMatches.map((match) => {
                       const prediction = predictionsByMatch[match.id];
                       const matchState = getMatchState(match, unlockedThroughDate, nowIso);
+                      const result = getPredictionResult(match, prediction);
                       return (
                         <article
                           key={match.id}
@@ -453,15 +533,21 @@ export function PredictionApp({
                               </div>
                             )}
                           </div>
+                          {result && (
+                            <div className={`border-t px-4 py-3 text-sm font-black sm:px-6 ${result.className}`}>
+                              Final: {match.homeScore} - {match.awayScore} · {result.label} · +{result.points} pts
+                            </div>
+                          )}
                         </article>
                       );
                     })}
                   </div>
-                </div>
-              ))}
+                </details>
+                );
+              })}
             </section>
 
-            <div className="sticky bottom-3 z-10 flex max-w-full flex-col gap-3 rounded-3xl border border-[#dfe3f2] bg-white/95 p-3 shadow-[0_18px_55px_rgba(29,35,73,0.18)] backdrop-blur sm:bottom-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+            <div className="fixed inset-x-3 bottom-3 z-30 flex max-w-full flex-col gap-3 rounded-3xl border border-[#dfe3f2] bg-white/95 p-3 shadow-[0_18px_55px_rgba(29,35,73,0.22)] backdrop-blur sm:bottom-4 sm:flex-row sm:items-center sm:justify-between sm:p-4 lg:sticky lg:inset-x-auto lg:bottom-4">
               <p className={`text-sm font-bold ${state.ok ? "text-emerald-700" : "text-[#62677f]"}`}>
                 {state.message ||
                   (isAuthenticated
@@ -508,6 +594,17 @@ export function PredictionApp({
                       <p className="mt-1 text-xs font-semibold text-[#62677f]">
                         {formatDate(match.matchDate)} · {homeScore} - {awayScore}
                       </p>
+                      {getPredictionResult(match, { matchId: match.id, homeScore, awayScore }) && (
+                        <p
+                          className={`mt-2 rounded-xl border px-3 py-2 text-xs font-black ${
+                            getPredictionResult(match, { matchId: match.id, homeScore, awayScore })?.className
+                          }`}
+                        >
+                          Final: {match.homeScore} - {match.awayScore} ·{" "}
+                          {getPredictionResult(match, { matchId: match.id, homeScore, awayScore })?.label} · +
+                          {getPredictionResult(match, { matchId: match.id, homeScore, awayScore })?.points} pts
+                        </p>
+                      )}
                     </div>
                   ))
                 )}
