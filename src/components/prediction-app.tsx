@@ -119,8 +119,8 @@ export function PredictionApp({
   const openTotal = matches.filter((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen).length;
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f8fc] text-[#171925]">
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-3 py-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f7f8fc] text-[#171925]">
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 overflow-x-hidden px-3 py-4 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-5 rounded-[28px] bg-white px-5 py-6 shadow-[0_18px_70px_rgba(29,35,73,0.08)] sm:px-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-col gap-5">
             <Image
@@ -145,7 +145,7 @@ export function PredictionApp({
             </div>
           </div>
 
-          <div className="grid w-full grid-cols-3 gap-2 rounded-3xl bg-[#edf2ff] p-2 text-center sm:min-w-96 sm:gap-3 sm:p-3 lg:w-auto">
+          <div className="grid w-full max-w-full grid-cols-3 gap-2 rounded-3xl bg-[#edf2ff] p-2 text-center sm:max-w-96 sm:gap-3 sm:p-3 lg:w-96">
             <div className="rounded-2xl bg-white p-4">
               <p className="text-3xl font-black text-[#3857e8]">{total}</p>
               <p className="text-xs font-bold uppercase text-[#71768d]">jogos</p>
@@ -178,8 +178,8 @@ export function PredictionApp({
           </nav>
         </details>
 
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <form action={formAction} className="flex flex-col gap-6">
+        <div className="grid min-w-0 max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <form action={formAction} className="flex min-w-0 max-w-full flex-col gap-6">
             <section id="dados" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-5 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-6">
               <div className="mb-5 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3857e8]">
@@ -195,7 +195,7 @@ export function PredictionApp({
                 </div>
               </div>
 
-              <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+              <div className="grid min-w-0 max-w-full gap-3 lg:grid-cols-2">
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                   E-mail NEO
                   <input
@@ -377,8 +377,8 @@ export function PredictionApp({
             </section>
 
             <section id="jogos" className="flex scroll-mt-20 flex-col gap-5">
-              <div className="flex items-end justify-between gap-4">
-                <div>
+              <div className="flex min-w-0 items-end justify-between gap-4">
+                <div className="min-w-0">
                   <h2 className="text-3xl font-black">Jogos</h2>
                   <p className="mt-1 text-sm text-[#62677f]">
                     {isAuthenticated
@@ -420,7 +420,7 @@ export function PredictionApp({
                               </span>
                             </div>
                           </div>
-                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 py-5 sm:gap-3 sm:px-6">
+                          <div className="grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 py-5 sm:gap-3 sm:px-6">
                             <Team flag={match.homeFlag} name={match.homeTeam} />
                             <span className="text-xl font-black">x</span>
                             <Team flag={match.awayFlag} name={match.awayTeam} alignRight />
@@ -437,7 +437,7 @@ export function PredictionApp({
                                 </div>
                                 </>
                               ) : (
-                                <div className="flex w-full items-center justify-between gap-3">
+                                <div className="flex min-w-0 w-full items-center justify-between gap-3">
                                   <span className="text-sm font-black sm:text-base">Entre para palpitar</span>
                                   <span className="text-right text-xs font-bold text-[#62677f] sm:text-sm">
                                     Seus palpites ficam protegidos por senha.
@@ -445,7 +445,7 @@ export function PredictionApp({
                                 </div>
                               )
                             ) : (
-                              <div className="flex w-full items-center justify-between gap-3">
+                              <div className="flex min-w-0 w-full items-center justify-between gap-3">
                                 <span className="text-sm font-black sm:text-base">Palpite bloqueado</span>
                                 <span className="text-right text-xs font-bold text-[#62677f] sm:text-sm">
                                   {matchState.message}

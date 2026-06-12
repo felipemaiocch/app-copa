@@ -71,8 +71,8 @@ export default async function AdminPage({
   const pdfHref = buildPdfHref(filters);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f8fc] px-3 py-4 text-[#171925] sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f7f8fc] px-3 py-4 text-[#171925] sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 overflow-x-hidden">
         <header className="flex flex-col gap-4 rounded-[26px] bg-white p-5 shadow-[0_18px_70px_rgba(29,35,73,0.08)] sm:p-7 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <Link href="/" className="mb-4 inline-flex items-center gap-2 text-sm font-black text-[#3857e8]">
@@ -115,7 +115,7 @@ export default async function AdminPage({
           <Stat icon={<CheckCircle2 className="h-5 w-5" />} label="Acertos exatos" value={winners.length} />
         </section>
 
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid min-w-0 max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
           <section id="resultados" className="scroll-mt-20 rounded-[26px] border border-[#dfe3f2] bg-white p-4 shadow-[0_16px_50px_rgba(29,35,73,0.06)] sm:p-5">
             <div className="mb-5">
               <h2 className="text-2xl font-black">Resultados dos jogos</h2>
@@ -124,11 +124,11 @@ export default async function AdminPage({
 
             <div className="flex flex-col gap-3">
               {matches.map((match) => (
-                <form
-                  key={match.id}
-                  action={saveResult}
-                  className="grid min-w-0 gap-4 rounded-2xl border border-[#e1e5f2] bg-[#fbfcff] p-4 md:grid-cols-[minmax(0,1fr)_auto]"
-                >
+                  <form
+                    key={match.id}
+                    action={saveResult}
+                  className="grid min-w-0 max-w-full gap-4 rounded-2xl border border-[#e1e5f2] bg-[#fbfcff] p-4 md:grid-cols-[minmax(0,1fr)_auto]"
+                  >
                   <input type="hidden" name="matchId" value={match.id} />
                   <div className="min-w-0">
                     <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-black uppercase text-[#62677f]">

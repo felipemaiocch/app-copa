@@ -17,14 +17,34 @@ body {
   color: var(--foreground);
   font-family: "Geist", "Geist Fallback", Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  overscroll-behavior-x: none;
+  position: relative;
+  touch-action: pan-y;
+  width: 100%;
 }
 
 button,
 input,
 select {
   font: inherit;
+  min-width: 0;
 }
 
 html {
   scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
