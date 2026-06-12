@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bolao da Copa | DR Monitora",
   description: "Plataforma de palpites da Copa para colaboradores da DR Monitora.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export const viewport: Viewport = {

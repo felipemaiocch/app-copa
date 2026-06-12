@@ -103,8 +103,13 @@ function setSessionCookie(token: string) {
 
 export async function authenticateParticipant(_previousState: unknown, formData: FormData) {
   const mode = asText(formData.get("mode"));
-  const email = normalizeEmail(asText(formData.get("email")));
-  const password = asText(formData.get("password"));
+  const email = normalizeEmail(
+    asText(formData.get("email")) ||
+      asText(formData.get(mode === "register" ? "registerEmail" : "loginEmail")),
+  );
+  const password =
+    asText(formData.get("password")) ||
+    asText(formData.get(mode === "register" ? "registerPassword" : "loginPassword"));
   const firstName = asText(formData.get("firstName"));
   const lastName = asText(formData.get("lastName"));
   const department = asText(formData.get("department"));

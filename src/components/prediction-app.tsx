@@ -112,6 +112,62 @@ function dateHasOpenMatches(matches: Match[], unlockedThroughDate: string, nowIs
   return matches.some((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen);
 }
 
+const flagCodeByTeam: Record<string, string> = {
+  "África do Sul": "za",
+  Alemanha: "de",
+  Argélia: "dz",
+  Argentina: "ar",
+  "Arábia Saudita": "sa",
+  Austrália: "au",
+  Áustria: "at",
+  Bélgica: "be",
+  "Bósnia e Herzegovina": "ba",
+  Brasil: "br",
+  "Cabo Verde": "cv",
+  Canadá: "ca",
+  Catar: "qa",
+  Colômbia: "co",
+  "Costa do Marfim": "ci",
+  Croácia: "hr",
+  Curaçao: "cw",
+  Egito: "eg",
+  Equador: "ec",
+  Escócia: "gb-sct",
+  Espanha: "es",
+  "Estados Unidos": "us",
+  França: "fr",
+  Gana: "gh",
+  Haiti: "ht",
+  Holanda: "nl",
+  Inglaterra: "gb-eng",
+  Iraque: "iq",
+  Japão: "jp",
+  Jordânia: "jo",
+  Marrocos: "ma",
+  México: "mx",
+  Noruega: "no",
+  "Nova Zelândia": "nz",
+  Panamá: "pa",
+  Paraguai: "py",
+  Portugal: "pt",
+  "República Democrática do Congo": "cd",
+  "República da Coreia": "kr",
+  "República Islâmica do Irã": "ir",
+  Senegal: "sn",
+  Suécia: "se",
+  Suíça: "ch",
+  Tchéquia: "cz",
+  Tunísia: "tn",
+  Turquia: "tr",
+  Uruguai: "uy",
+  Uzbequistão: "uz",
+};
+
+function getFlagUrl(teamName: string) {
+  const code = flagCodeByTeam[teamName];
+  return code ? `https://flagcdn.com/w80/${code}.png` : null;
+}
+
 export function PredictionApp({
   matches,
   initialParticipant,
@@ -258,99 +314,67 @@ export function PredictionApp({
                 </div>
               </div>
 
-              <div className="grid min-w-0 max-w-full gap-3 lg:grid-cols-2">
-                <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                  E-mail NEO
-                  <input
-                    name="email"
-                    type="email"
-                    defaultValue={email}
-                    placeholder="nome@empresa.com"
-                    required={!isAuthenticated}
-                    readOnly={isAuthenticated}
-                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10 read-only:bg-[#f5f7fc]"
-                  />
-                  <span className="text-xs font-semibold text-[#62677f]">
-                    {isAuthenticated
-                      ? "Ao voltar neste navegador, voce continua logado automaticamente."
-                      : "Depois de entrar, seus palpites salvos aparecem de novo neste navegador."}
-                  </span>
-                </label>
-                {!isAuthenticated && (
-                  <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                    Senha
-                    <input
-                      name="password"
-                      type="password"
-                      minLength={4}
-                      required
-                      placeholder="Sua senha"
-                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                    />
-                    <span className="text-xs font-semibold text-[#62677f]">
-                      A senha impede que outra pessoa use seu e-mail para ver ou alterar palpites.
-                    </span>
-                  </label>
-                )}
-                {isAuthenticated && (
-                  <>
-                    <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                      Nome
-                      <input
-                        name="firstName"
-                        defaultValue={initialParticipant?.firstName ?? ""}
-                        required
-                        className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                      Sobrenome
-                      <input
-                        name="lastName"
-                        defaultValue={initialParticipant?.lastName ?? ""}
-                        required
-                        className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                      Departamento
-                      <select
-                        name="department"
-                        defaultValue={initialParticipant?.department ?? ""}
-                        required
-                        className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                      >
-                        <option value="" disabled>
-                          Selecione
-                        </option>
-                        {departments.map((department) => (
-                          <option key={department} value={department}>
-                            {department}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </>
-                )}
-              </div>
+              {!isAuthenticated ? (
+                <div className="grid min-w-0 max-w-full gap-4 lg:grid-cols-2">
+                  <div className="rounded-[24px] border border-[#dfe3f2] bg-[#fbfcff] p-4">
+                    <h3 className="text-lg font-black text-[#171925]">Já tenho senha</h3>
+                    <p className="mt-1 text-sm font-semibold text-[#62677f]">Entre para recuperar seus palpites neste computador.</p>
+                    <div className="mt-4 grid gap-3">
+                      <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                        E-mail NEO
+                        <input
+                          name="loginEmail"
+                          type="email"
+                          placeholder="nome@empresa.com"
+                          className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                        Senha
+                        <input
+                          name="loginPassword"
+                          type="password"
+                          minLength={4}
+                          placeholder="Sua senha"
+                          className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      formAction={loginAction}
+                      formNoValidate
+                      disabled={authPending}
+                      className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.24)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {loginPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
+                      Entrar
+                    </button>
+                  </div>
 
-              {!isAuthenticated && (
-                <div className="mt-4 flex flex-col gap-4">
-                  <button
-                    type="submit"
-                    formAction={loginAction}
-                    formNoValidate
-                    disabled={authPending}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.24)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {loginPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
-                    Entrar
-                  </button>
-                  <details className="rounded-2xl border border-[#dfe3f2] bg-[#fbfcff] p-4">
-                    <summary className="cursor-pointer list-none text-sm font-black text-[#3857e8] marker:hidden">
-                      Primeiro acesso / criar cadastro
-                    </summary>
+                  <div className="rounded-[24px] border-2 border-[#3857e8] bg-[#f5f7ff] p-4 shadow-[0_12px_34px_rgba(56,87,232,0.12)]">
+                    <h3 className="text-lg font-black text-[#3857e8]">Primeiro acesso</h3>
+                    <p className="mt-1 text-sm font-semibold text-[#62677f]">Cadastre e-mail, senha e dados para aparecer no ranking.</p>
                     <div className="mt-4 grid min-w-0 gap-3 lg:grid-cols-2">
+                      <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f] lg:col-span-2">
+                        E-mail NEO
+                        <input
+                          name="registerEmail"
+                          type="email"
+                          placeholder="nome@empresa.com"
+                          className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f] lg:col-span-2">
+                        Criar senha
+                        <input
+                          name="registerPassword"
+                          type="password"
+                          minLength={4}
+                          placeholder="Mínimo 4 caracteres"
+                          className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                        />
+                      </label>
                       <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                         Nome
                         <input
@@ -388,12 +412,64 @@ export function PredictionApp({
                       formAction={registerAction}
                       formNoValidate
                       disabled={authPending}
-                      className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#d9deee] bg-white px-5 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff] disabled:cursor-not-allowed disabled:opacity-70"
+                      className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#171925] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(23,25,37,0.18)] transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {registerPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                      Criar senha e entrar
+                      Cadastrar e entrar
                     </button>
-                  </details>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid min-w-0 max-w-full gap-3 lg:grid-cols-2">
+                  <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                    E-mail NEO
+                    <input
+                      name="email"
+                      type="email"
+                      defaultValue={email}
+                      readOnly
+                      className="h-12 rounded-2xl border border-[#d9deee] bg-[#f5f7fc] px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                    />
+                    <span className="text-xs font-semibold text-[#62677f]">
+                      Ao voltar neste navegador, voce continua logado automaticamente.
+                    </span>
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                    Nome
+                    <input
+                      name="firstName"
+                      defaultValue={initialParticipant?.firstName ?? ""}
+                      required
+                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                    Sobrenome
+                    <input
+                      name="lastName"
+                      defaultValue={initialParticipant?.lastName ?? ""}
+                      required
+                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                    Departamento
+                    <select
+                      name="department"
+                      defaultValue={initialParticipant?.department ?? ""}
+                      required
+                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                    >
+                      <option value="" disabled>
+                        Selecione
+                      </option>
+                      {departments.map((department) => (
+                        <option key={department} value={department}>
+                          {department}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               )}
 
@@ -640,8 +716,8 @@ export function PredictionApp({
                   <Medal className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black">Ranking</h2>
-                  <p className="text-sm text-[#62677f]">Atualiza depois dos resultados.</p>
+                  <h2 className="text-xl font-black">Top 10</h2>
+                  <p className="text-sm text-[#62677f]">Ranking dos primeiros colocados.</p>
                 </div>
               </div>
               <div className="flex flex-col gap-3">
@@ -650,7 +726,7 @@ export function PredictionApp({
                     O ranking aparece assim que os primeiros participantes salvarem palpites.
                   </p>
                 ) : (
-                  ranking.slice(0, 8).map((row, index) => (
+                  ranking.slice(0, 10).map((row, index) => (
                     <div key={row.participantId} className="flex items-center justify-between gap-3 rounded-2xl bg-[#f5f7fc] p-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-black">
@@ -672,10 +748,23 @@ export function PredictionApp({
 }
 
 function Team({ flag, name, alignRight = false }: { flag: string; name: string; alignRight?: boolean }) {
+  const flagUrl = getFlagUrl(name);
+
   return (
     <div className={`flex min-w-0 flex-col gap-2 ${alignRight ? "items-end text-right" : "items-start"}`}>
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d9deee] bg-white text-4xl shadow-sm">
-        {flag}
+      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-[#d9deee] bg-white text-3xl shadow-sm">
+        {flagUrl ? (
+          <Image
+            src={flagUrl}
+            alt={`Bandeira de ${name}`}
+            width={80}
+            height={60}
+            unoptimized
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span aria-label={`Bandeira de ${name}`}>{flag}</span>
+        )}
       </div>
       <p className="max-w-full truncate text-base font-bold sm:text-lg">{name}</p>
     </div>
