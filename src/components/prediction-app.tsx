@@ -190,7 +190,7 @@ export function PredictionApp({
                   <p className="text-sm text-[#62677f]">
                     {isAuthenticated
                       ? "Seu e-mail NEO esta protegido por senha."
-                      : "Use seu e-mail NEO e uma senha simples no primeiro acesso."}
+                      : "Se voce ja criou sua senha, informe apenas e-mail e senha para entrar."}
                   </p>
                 </div>
               </div>
@@ -221,7 +221,7 @@ export function PredictionApp({
                       type="password"
                       minLength={4}
                       required
-                      placeholder="Mínimo 4 caracteres"
+                      placeholder="Sua senha"
                       className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
                     />
                     <span className="text-xs font-semibold text-[#62677f]">
@@ -229,64 +229,108 @@ export function PredictionApp({
                     </span>
                   </label>
                 )}
-                <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                  Nome
-                  <input
-                    name="firstName"
-                    defaultValue={initialParticipant?.firstName ?? ""}
-                    required={isAuthenticated}
-                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                  />
-                </label>
-                <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                  Sobrenome
-                  <input
-                    name="lastName"
-                    defaultValue={initialParticipant?.lastName ?? ""}
-                    required={isAuthenticated}
-                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                  />
-                </label>
-                <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
-                  Departamento
-                  <select
-                    name="department"
-                    defaultValue={initialParticipant?.department ?? ""}
-                    required={isAuthenticated}
-                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                  >
-                    <option value="" disabled>
-                      Selecione
-                    </option>
-                    {departments.map((department) => (
-                      <option key={department} value={department}>
-                        {department}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {isAuthenticated && (
+                  <>
+                    <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                      Nome
+                      <input
+                        name="firstName"
+                        defaultValue={initialParticipant?.firstName ?? ""}
+                        required
+                        className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                      Sobrenome
+                      <input
+                        name="lastName"
+                        defaultValue={initialParticipant?.lastName ?? ""}
+                        required
+                        className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                      Departamento
+                      <select
+                        name="department"
+                        defaultValue={initialParticipant?.department ?? ""}
+                        required
+                        className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                      >
+                        <option value="" disabled>
+                          Selecione
+                        </option>
+                        {departments.map((department) => (
+                          <option key={department} value={department}>
+                            {department}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
               </div>
 
               {!isAuthenticated && (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-4 flex flex-col gap-4">
                   <button
                     type="submit"
                     formAction={loginAction}
+                    formNoValidate
                     disabled={authPending}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#d9deee] bg-white px-5 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.24)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {loginPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
                     Entrar
                   </button>
-                  <button
-                    type="submit"
-                    formAction={registerAction}
-                    disabled={authPending}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.24)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {registerPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                    Criar senha e entrar
-                  </button>
+                  <details className="rounded-2xl border border-[#dfe3f2] bg-[#fbfcff] p-4">
+                    <summary className="cursor-pointer list-none text-sm font-black text-[#3857e8] marker:hidden">
+                      Primeiro acesso / criar cadastro
+                    </summary>
+                    <div className="mt-4 grid min-w-0 gap-3 lg:grid-cols-2">
+                      <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                        Nome
+                        <input
+                          name="firstName"
+                          className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                        Sobrenome
+                        <input
+                          name="lastName"
+                          className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f] lg:col-span-2">
+                        Departamento
+                        <select
+                          name="department"
+                          defaultValue=""
+                          className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                        >
+                          <option value="" disabled>
+                            Selecione
+                          </option>
+                          {departments.map((department) => (
+                            <option key={department} value={department}>
+                              {department}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      formAction={registerAction}
+                      formNoValidate
+                      disabled={authPending}
+                      className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#d9deee] bg-white px-5 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {registerPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                      Criar senha e entrar
+                    </button>
+                  </details>
                 </div>
               )}
 
