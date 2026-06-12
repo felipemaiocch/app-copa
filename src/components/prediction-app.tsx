@@ -16,7 +16,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
-import { authenticateParticipant, logoutParticipant, submitPredictions } from "@/app/actions";
+import { loginParticipantAction, logoutParticipant, registerParticipantAction, submitPredictions } from "@/app/actions";
 import type { Match, Participant, Prediction, RankingRow } from "@/lib/data";
 import { departments } from "@/lib/departments";
 
@@ -92,8 +92,11 @@ export function PredictionApp({
   nowIso: string;
 }) {
   const [state, formAction, isPending] = useActionState(submitPredictions, initialActionState);
-  const [authState, authAction, authPending] = useActionState(authenticateParticipant, initialActionState);
+  const [loginState, loginAction, loginPending] = useActionState(loginParticipantAction, initialActionState);
+  const [registerState, registerAction, registerPending] = useActionState(registerParticipantAction, initialActionState);
   const isAuthenticated = Boolean(initialParticipant);
+  const authState = registerState.message ? registerState : loginState;
+  const authPending = loginPending || registerPending;
   const email = initialParticipant?.email ?? authState.email ?? "";
   const predictionsByMatch = useMemo(() => {
     return Object.fromEntries(initialPredictions.map((prediction) => [prediction.matchId, prediction]));
@@ -268,24 +271,20 @@ export function PredictionApp({
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <button
                     type="submit"
-                    name="mode"
-                    value="login"
-                    formAction={authAction}
+                    formAction={loginAction}
                     disabled={authPending}
                     className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#d9deee] bg-white px-5 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff] disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {authPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
+                    {loginPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
                     Entrar
                   </button>
                   <button
                     type="submit"
-                    name="mode"
-                    value="register"
-                    formAction={authAction}
+                    formAction={registerAction}
                     disabled={authPending}
                     className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.24)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {authPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                    {registerPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                     Criar senha e entrar
                   </button>
                 </div>

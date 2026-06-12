@@ -142,6 +142,16 @@ export async function authenticateParticipant(_previousState: unknown, formData:
   };
 }
 
+export async function loginParticipantAction(previousState: unknown, formData: FormData) {
+  formData.set("mode", "login");
+  return authenticateParticipant(previousState, formData);
+}
+
+export async function registerParticipantAction(previousState: unknown, formData: FormData) {
+  formData.set("mode", "register");
+  return authenticateParticipant(previousState, formData);
+}
+
 export async function logoutParticipant() {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
