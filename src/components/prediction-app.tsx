@@ -1,9 +1,22 @@
 "use client";
 
-import { useActionState, useEffect, useMemo } from "react";
+import { useActionState, useMemo } from "react";
 import Image from "next/image";
-import { CalendarDays, CheckCircle2, ClipboardList, Gift, Loader2, Lock, Medal, Menu, Sparkles, Trophy } from "lucide-react";
-import { submitPredictions } from "@/app/actions";
+import {
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  Gift,
+  KeyRound,
+  Loader2,
+  Lock,
+  LogOut,
+  Medal,
+  Menu,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
+import { authenticateParticipant, logoutParticipant, submitPredictions } from "@/app/actions";
 import type { Match, Participant, Prediction, RankingRow } from "@/lib/data";
 import { departments } from "@/lib/departments";
 
@@ -79,7 +92,9 @@ export function PredictionApp({
   nowIso: string;
 }) {
   const [state, formAction, isPending] = useActionState(submitPredictions, initialActionState);
-  const email = state.email ?? initialParticipant?.email ?? "";
+  const [authState, authAction, authPending] = useActionState(authenticateParticipant, initialActionState);
+  const isAuthenticated = Boolean(initialParticipant);
+  const email = initialParticipant?.email ?? authState.email ?? "";
   const predictionsByMatch = useMemo(() => {
     return Object.fromEntries(initialPredictions.map((prediction) => [prediction.matchId, prediction]));
   }, [initialPredictions]);
@@ -99,26 +114,6 @@ export function PredictionApp({
   }, [initialPredictions, matches]);
   const total = matches.length;
   const openTotal = matches.filter((match) => getMatchState(match, unlockedThroughDate, nowIso).isOpen).length;
-
-  useEffect(() => {
-    if (!initialParticipant?.email) {
-      const stored = window.localStorage.getItem("app-copa-email");
-      if (stored) window.location.replace(`/?email=${encodeURIComponent(stored)}`);
-    }
-  }, [initialParticipant?.email]);
-
-  useEffect(() => {
-    if (state.ok && state.email) {
-      window.localStorage.setItem("app-copa-email", state.email);
-      window.history.replaceState(null, "", `/?email=${encodeURIComponent(state.email)}`);
-    }
-  }, [state]);
-
-  function loadEmailPredictions() {
-    const input = document.querySelector<HTMLInputElement>('input[name="email"]');
-    const value = input?.value.trim().toLowerCase();
-    if (value) window.location.href = `/?email=${encodeURIComponent(value)}`;
-  }
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#f7f8fc] text-[#171925]">
@@ -188,41 +183,55 @@ export function PredictionApp({
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <div>
-                <h2 className="text-xl font-black">Seus dados</h2>
-                  <p className="text-sm text-[#62677f]">Use o e-mail do NEO para recuperar seus palpites.</p>
+                  <h2 className="text-xl font-black">{isAuthenticated ? "Seus dados" : "Entrar no bolão"}</h2>
+                  <p className="text-sm text-[#62677f]">
+                    {isAuthenticated
+                      ? "Seu e-mail NEO esta protegido por senha."
+                      : "Use seu e-mail NEO e uma senha simples no primeiro acesso."}
+                  </p>
                 </div>
               </div>
 
               <div className="grid min-w-0 gap-3 lg:grid-cols-2">
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                   E-mail NEO
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px]">
-                    <input
-                      name="email"
-                      type="email"
-                      defaultValue={email}
-                      placeholder="nome@empresa.com"
-                      required
-                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
-                    />
-                    <button
-                      type="button"
-                      onClick={loadEmailPredictions}
-                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff]"
-                    >
-                      Carregar
-                    </button>
-                  </div>
+                  <input
+                    name="email"
+                    type="email"
+                    defaultValue={email}
+                    placeholder="nome@empresa.com"
+                    required={!isAuthenticated}
+                    readOnly={isAuthenticated}
+                    className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10 read-only:bg-[#f5f7fc]"
+                  />
                   <span className="text-xs font-semibold text-[#62677f]">
-                    Digite o e-mail e clique em Carregar para recuperar palpites já salvos.
+                    {isAuthenticated
+                      ? "Ao voltar neste navegador, voce continua logado automaticamente."
+                      : "Depois de entrar, seus palpites salvos aparecem de novo neste navegador."}
                   </span>
                 </label>
+                {!isAuthenticated && (
+                  <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
+                    Senha
+                    <input
+                      name="password"
+                      type="password"
+                      minLength={4}
+                      required
+                      placeholder="Mínimo 4 caracteres"
+                      className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
+                    />
+                    <span className="text-xs font-semibold text-[#62677f]">
+                      A senha impede que outra pessoa use seu e-mail para ver ou alterar palpites.
+                    </span>
+                  </label>
+                )}
                 <label className="flex flex-col gap-2 text-sm font-bold text-[#3a3d4f]">
                   Nome
                   <input
                     name="firstName"
                     defaultValue={initialParticipant?.firstName ?? ""}
-                    required
+                    required={isAuthenticated}
                     className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
                   />
                 </label>
@@ -231,7 +240,7 @@ export function PredictionApp({
                   <input
                     name="lastName"
                     defaultValue={initialParticipant?.lastName ?? ""}
-                    required
+                    required={isAuthenticated}
                     className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
                   />
                 </label>
@@ -240,7 +249,7 @@ export function PredictionApp({
                   <select
                     name="department"
                     defaultValue={initialParticipant?.department ?? ""}
-                    required
+                    required={isAuthenticated}
                     className="h-12 rounded-2xl border border-[#d9deee] bg-white px-4 text-base outline-none transition focus:border-[#3857e8] focus:ring-4 focus:ring-[#3857e8]/10"
                   >
                     <option value="" disabled>
@@ -254,6 +263,62 @@ export function PredictionApp({
                   </select>
                 </label>
               </div>
+
+              {!isAuthenticated && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="submit"
+                    name="mode"
+                    value="login"
+                    formAction={authAction}
+                    disabled={authPending}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#d9deee] bg-white px-5 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {authPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
+                    Entrar
+                  </button>
+                  <button
+                    type="submit"
+                    name="mode"
+                    value="register"
+                    formAction={authAction}
+                    disabled={authPending}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.24)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {authPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                    Criar senha e entrar
+                  </button>
+                </div>
+              )}
+
+              {isAuthenticated && (
+                <div className="mt-4 flex flex-col gap-3 rounded-2xl bg-[#f5f7fc] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-bold text-[#62677f]">
+                    Logado como <span className="text-[#171925]">{email}</span>
+                  </p>
+                  <button
+                    type="submit"
+                    formAction={logoutParticipant}
+                    formNoValidate
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#d9deee] bg-white px-4 text-sm font-black text-[#3857e8] transition hover:bg-[#edf2ff]"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </button>
+                </div>
+              )}
+
+              {authState.message && !isAuthenticated && (
+                <div
+                  className={`mt-4 rounded-2xl border p-4 text-sm font-black ${
+                    authState.ok
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {authState.message}
+                </div>
+              )}
 
               {state.message && (
                 <div
@@ -273,7 +338,9 @@ export function PredictionApp({
                 <div>
                   <h2 className="text-3xl font-black">Jogos</h2>
                   <p className="mt-1 text-sm text-[#62677f]">
-                    Você pode salvar e alterar quantas vezes quiser até 2h antes do início de cada jogo.
+                    {isAuthenticated
+                      ? "Você pode salvar e alterar quantas vezes quiser até 2h antes do início de cada jogo."
+                      : "Entre com e-mail e senha para liberar o salvamento dos palpites."}
                   </p>
                 </div>
               </div>
@@ -295,7 +362,7 @@ export function PredictionApp({
                             matchState.isOpen ? "" : "opacity-75"
                           }`}
                         >
-                          {matchState.isOpen && <input type="hidden" name="matchId" value={match.id} />}
+                          {matchState.isOpen && isAuthenticated && <input type="hidden" name="matchId" value={match.id} />}
                           <div className="flex items-start justify-between gap-3 border-b border-[#e4e8f5] px-4 py-4 sm:px-5">
                             <span className="min-w-0 text-base font-black">{match.groupName}</span>
                             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -317,14 +384,23 @@ export function PredictionApp({
                           </div>
                           <div className="flex items-center justify-between gap-3 border-t border-[#e4e8f5] bg-[#fbfcff] px-4 py-4 sm:px-6">
                             {matchState.isOpen ? (
-                              <>
+                              isAuthenticated ? (
+                                <>
                                 <span className="text-sm font-black sm:text-base">Seu palpite</span>
                                 <div className="flex shrink-0 items-center gap-2">
                                   <ScoreInput name={`homeScore:${match.id}`} defaultValue={prediction?.homeScore ?? 0} />
                                   <span className="font-black text-[#62677f]">-</span>
                                   <ScoreInput name={`awayScore:${match.id}`} defaultValue={prediction?.awayScore ?? 0} />
                                 </div>
-                              </>
+                                </>
+                              ) : (
+                                <div className="flex w-full items-center justify-between gap-3">
+                                  <span className="text-sm font-black sm:text-base">Entre para palpitar</span>
+                                  <span className="text-right text-xs font-bold text-[#62677f] sm:text-sm">
+                                    Seus palpites ficam protegidos por senha.
+                                  </span>
+                                </div>
+                              )
                             ) : (
                               <div className="flex w-full items-center justify-between gap-3">
                                 <span className="text-sm font-black sm:text-base">Palpite bloqueado</span>
@@ -344,11 +420,14 @@ export function PredictionApp({
 
             <div className="sticky bottom-3 z-10 flex max-w-full flex-col gap-3 rounded-3xl border border-[#dfe3f2] bg-white/95 p-3 shadow-[0_18px_55px_rgba(29,35,73,0.18)] backdrop-blur sm:bottom-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
               <p className={`text-sm font-bold ${state.ok ? "text-emerald-700" : "text-[#62677f]"}`}>
-                {state.message || `Revise os ${openTotal} jogos abertos e salve seus palpites.`}
+                {state.message ||
+                  (isAuthenticated
+                    ? `Revise os ${openTotal} jogos abertos e salve seus palpites.`
+                    : "Entre ou crie sua senha para salvar seus palpites.")}
               </p>
               <button
                 type="submit"
-                disabled={isPending}
+                disabled={!isAuthenticated || isPending}
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#3857e8] px-6 text-base font-black text-white shadow-[0_12px_28px_rgba(56,87,232,0.30)] transition hover:bg-[#2745d9] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trophy className="h-5 w-5" />}
@@ -365,13 +444,17 @@ export function PredictionApp({
                 </div>
                 <div>
                   <h2 className="text-xl font-black">Meus palpites</h2>
-                  <p className="text-sm text-[#62677f]">Palpites já salvos para este e-mail.</p>
+                  <p className="text-sm text-[#62677f]">Palpites salvos na sua conta.</p>
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                {savedPredictions.length === 0 ? (
+                {!isAuthenticated ? (
                   <p className="rounded-2xl bg-[#f5f7fc] p-4 text-sm font-semibold text-[#62677f]">
-                    Carregue seu e-mail ou salve palpites para ver a lista aqui.
+                    Entre com e-mail e senha para ver seus palpites salvos.
+                  </p>
+                ) : savedPredictions.length === 0 ? (
+                  <p className="rounded-2xl bg-[#f5f7fc] p-4 text-sm font-semibold text-[#62677f]">
+                    Salve seus primeiros palpites para ver a lista aqui.
                   </p>
                 ) : (
                   savedPredictions.slice(0, 10).map(({ match, homeScore, awayScore }) => (
@@ -406,7 +489,8 @@ export function PredictionApp({
                 <Rule points="+3 pontos" text="Acertou apenas o vencedor ou empate." />
                 <Rule points="0 pontos" text="Errou o resultado." />
                 <Rule points="Edição" text="Você pode alterar o palpite até 2h antes do início de cada jogo." />
-                <Rule points="E-mail NEO" text="O e-mail recupera seus palpites; o ranking exibe nome e sobrenome." />
+                <Rule points="Senha" text="O e-mail NEO e a senha protegem seus palpites. Neste navegador, voce continua logado." />
+                <Rule points="Ranking" text="O ranking exibe nome, sobrenome e departamento, nunca o e-mail." />
               </div>
             </section>
 

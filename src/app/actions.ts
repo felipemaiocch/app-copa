@@ -1,14 +1,21 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
+  deleteParticipantSession,
+  getParticipantBySessionToken,
   getMatches,
   isPredictionOpen,
+  loginParticipant,
   normalizeEmail,
+  registerParticipant,
   updateMatchResult,
-  upsertParticipant,
+  updateParticipantProfile,
   upsertPredictions,
 } from "@/lib/data";
+
+const sessionCookieName = "app-copa-session";
 
 function asText(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
@@ -24,17 +31,22 @@ function asScore(value: FormDataEntryValue | null) {
 }
 
 export async function submitPredictions(_previousState: unknown, formData: FormData) {
-  const email = normalizeEmail(asText(formData.get("email")));
   const firstName = asText(formData.get("firstName"));
   const lastName = asText(formData.get("lastName"));
   const department = asText(formData.get("department"));
+  const cookieStore = await cookies();
+  const participant = await getParticipantBySessionToken(cookieStore.get(sessionCookieName)?.value);
 
-  if (!email || !email.includes("@") || !firstName || !lastName || !department) {
-    return { ok: false, message: "Informe e-mail, nome, sobrenome e departamento." };
+  if (!participant) {
+    return { ok: false, message: "Entre com e-mail e senha para salvar seus palpites." };
   }
 
-  const participant = await upsertParticipant({
-    email,
+  if (!firstName || !lastName || !department) {
+    return { ok: false, message: "Informe nome, sobrenome e departamento." };
+  }
+
+  await updateParticipantProfile({
+    participantId: participant.id,
     firstName,
     lastName,
     department,
@@ -50,8 +62,8 @@ export async function submitPredictions(_previousState: unknown, formData: FormD
   if (allowedMatchIds.length === 0) {
     return {
       ok: false,
-      participantId: participant,
-      email,
+      participantId: participant.id,
+      email: participant.email,
       message: "Nenhum jogo esta aberto para palpite agora.",
     };
   }
@@ -62,19 +74,80 @@ export async function submitPredictions(_previousState: unknown, formData: FormD
     awayScore: asScore(formData.get(`awayScore:${matchId}`)),
   }));
 
-  await upsertPredictions(participant, predictions);
+  await upsertPredictions(participant.id, predictions);
   revalidatePath("/");
   revalidatePath("/admin");
 
   return {
     ok: true,
-    participantId: participant,
-    email,
+    participantId: participant.id,
+    email: participant.email,
     message:
       allowedMatchIds.length === matchIds.length
         ? "Palpites salvos."
         : "Palpites salvos. Jogos bloqueados ou encerrados nao foram alterados.",
   };
+}
+
+function setSessionCookie(token: string) {
+  return {
+    name: sessionCookieName,
+    value: token,
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 180,
+  };
+}
+
+export async function authenticateParticipant(_previousState: unknown, formData: FormData) {
+  const mode = asText(formData.get("mode"));
+  const email = normalizeEmail(asText(formData.get("email")));
+  const password = asText(formData.get("password"));
+  const firstName = asText(formData.get("firstName"));
+  const lastName = asText(formData.get("lastName"));
+  const department = asText(formData.get("department"));
+
+  if (!email || !email.includes("@") || password.length < 4) {
+    return { ok: false, message: "Informe e-mail valido e senha com pelo menos 4 caracteres." };
+  }
+
+  if (mode === "register" && (!firstName || !lastName || !department)) {
+    return { ok: false, message: "Informe nome, sobrenome e departamento para criar sua senha." };
+  }
+
+  const result =
+    mode === "register"
+      ? await registerParticipant({
+          email,
+          password,
+          firstName,
+          lastName,
+          department,
+        })
+      : await loginParticipant(email, password);
+
+  if (!result.ok) return result;
+
+  const cookieStore = await cookies();
+  cookieStore.set(setSessionCookie(result.sessionToken));
+  revalidatePath("/");
+
+  return {
+    ok: true,
+    email: result.participant.email,
+    participantId: result.participant.id,
+    message: mode === "register" ? "Cadastro criado. Voce esta logado." : "Login realizado.",
+  };
+}
+
+export async function logoutParticipant() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(sessionCookieName)?.value;
+  await deleteParticipantSession(token);
+  cookieStore.delete(sessionCookieName);
+  revalidatePath("/");
 }
 
 export async function saveResult(formData: FormData) {

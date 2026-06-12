@@ -1,3 +1,4 @@
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { getSql, makeId } from "./db";
 
 export type Match = {
@@ -27,6 +28,10 @@ export type Participant = {
   lastName: string;
   department: string;
 };
+
+export type AuthResult =
+  | { ok: true; participant: Participant; sessionToken: string }
+  | { ok: false; message: string };
 
 export type RankingRow = {
   participantId: string;
@@ -165,6 +170,37 @@ function dateOnly(value: unknown) {
   return new Date(text).toISOString().slice(0, 10);
 }
 
+function hashToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+
+  return `scrypt$${salt}$${hash}`;
+}
+
+function verifyPassword(password: string, storedHash: string) {
+  const [scheme, salt, hash] = storedHash.split("$");
+  if (scheme !== "scrypt" || !salt || !hash) return false;
+
+  const expected = Buffer.from(hash, "hex");
+  const actual = scryptSync(password, salt, 64);
+
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function mapParticipant(row: DbRow): Participant {
+  return {
+    id: String(row.id),
+    email: String(row.email),
+    firstName: String(row.first_name),
+    lastName: String(row.last_name),
+    department: String(row.department),
+  };
+}
+
 export function getTodayInSaoPaulo(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo",
@@ -225,6 +261,7 @@ async function setupSchema() {
   `;
 
   await sql`ALTER TABLE participants ADD COLUMN IF NOT EXISTS email text`;
+  await sql`ALTER TABLE participants ADD COLUMN IF NOT EXISTS password_hash text`;
 
   await sql`
     UPDATE participants
@@ -235,6 +272,21 @@ async function setupSchema() {
   await sql`
     CREATE UNIQUE INDEX IF NOT EXISTS participants_email_unique_idx
     ON participants (lower(email))
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS participant_sessions (
+      id text PRIMARY KEY,
+      participant_id text NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+      token_hash text NOT NULL UNIQUE,
+      expires_at timestamptz NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS participant_sessions_participant_idx
+    ON participant_sessions (participant_id)
   `;
 
   await sql`
@@ -371,17 +423,144 @@ export async function getParticipantByEmail(email?: string | null): Promise<Part
   const row = rows[0];
   if (!row) return null;
 
-  return {
-    id: String(row.id),
-    email: String(row.email),
-    firstName: String(row.first_name),
-    lastName: String(row.last_name),
-    department: String(row.department),
-  };
+  return mapParticipant(row);
 }
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+export async function getParticipantBySessionToken(token?: string | null): Promise<Participant | null> {
+  if (!token) return null;
+  await ensureSchema();
+  const sql = getSql();
+  const tokenHash = hashToken(token);
+  const rows = rowsOf(await sql`
+    SELECT p.id, p.email, p.first_name, p.last_name, p.department
+    FROM participant_sessions s
+    INNER JOIN participants p ON p.id = s.participant_id
+    WHERE s.token_hash = ${tokenHash}
+      AND s.expires_at > now()
+    LIMIT 1
+  `);
+
+  const row = rows[0];
+  return row ? mapParticipant(row) : null;
+}
+
+async function createParticipantSession(participantId: string) {
+  const sql = getSql();
+  const token = randomBytes(32).toString("hex");
+
+  await sql`
+    INSERT INTO participant_sessions (id, participant_id, token_hash, expires_at)
+    VALUES (${makeId("session")}, ${participantId}, ${hashToken(token)}, now() + interval '180 days')
+  `;
+
+  return token;
+}
+
+export async function deleteParticipantSession(token?: string | null) {
+  if (!token) return;
+  await ensureSchema();
+  const sql = getSql();
+
+  await sql`DELETE FROM participant_sessions WHERE token_hash = ${hashToken(token)}`;
+}
+
+export async function registerParticipant(input: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  department: string;
+  password: string;
+}): Promise<AuthResult> {
+  await ensureSchema();
+  const sql = getSql();
+  const email = normalizeEmail(input.email);
+  const existingRows = rowsOf(await sql`
+    SELECT id, email, first_name, last_name, department, password_hash
+    FROM participants
+    WHERE lower(email) = ${email}
+    LIMIT 1
+  `);
+  const existing = existingRows[0];
+
+  if (existing?.password_hash) {
+    return { ok: false, message: "Este e-mail ja tem cadastro. Entre com sua senha." };
+  }
+
+  const id = existing ? String(existing.id) : makeId("person");
+  const passwordHash = hashPassword(input.password);
+
+  await sql`
+    INSERT INTO participants (id, email, first_name, last_name, department, password_hash, updated_at)
+    VALUES (${id}, ${email}, ${input.firstName}, ${input.lastName}, ${input.department}, ${passwordHash}, now())
+    ON CONFLICT (lower(email))
+    DO UPDATE SET
+      first_name = excluded.first_name,
+      last_name = excluded.last_name,
+      department = excluded.department,
+      password_hash = excluded.password_hash,
+      updated_at = now()
+  `;
+
+  const participant = await getParticipantByEmail(email);
+  if (!participant) return { ok: false, message: "Nao foi possivel criar seu cadastro." };
+
+  return {
+    ok: true,
+    participant,
+    sessionToken: await createParticipantSession(participant.id),
+  };
+}
+
+export async function loginParticipant(emailInput: string, password: string): Promise<AuthResult> {
+  await ensureSchema();
+  const sql = getSql();
+  const email = normalizeEmail(emailInput);
+  const rows = rowsOf(await sql`
+    SELECT id, email, first_name, last_name, department, password_hash
+    FROM participants
+    WHERE lower(email) = ${email}
+    LIMIT 1
+  `);
+  const row = rows[0];
+
+  if (!row || !row.password_hash) {
+    return { ok: false, message: "Cadastro nao encontrado. Crie sua senha no primeiro acesso." };
+  }
+
+  if (!verifyPassword(password, String(row.password_hash))) {
+    return { ok: false, message: "Senha incorreta." };
+  }
+
+  const participant = mapParticipant(row);
+
+  return {
+    ok: true,
+    participant,
+    sessionToken: await createParticipantSession(participant.id),
+  };
+}
+
+export async function updateParticipantProfile(input: {
+  participantId: string;
+  firstName: string;
+  lastName: string;
+  department: string;
+}) {
+  await ensureSchema();
+  const sql = getSql();
+
+  await sql`
+    UPDATE participants
+    SET first_name = ${input.firstName},
+        last_name = ${input.lastName},
+        department = ${input.department},
+        updated_at = now()
+    WHERE id = ${input.participantId}
+  `;
 }
 
 export async function getPredictions(participantId?: string | null): Promise<Prediction[]> {

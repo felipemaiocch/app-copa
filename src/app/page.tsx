@@ -1,23 +1,21 @@
+import { cookies } from "next/headers";
 import { PredictionApp } from "@/components/prediction-app";
 import { SetupError } from "@/components/setup-error";
-import { getMatches, getParticipantByEmail, getPredictions, getRanking, getTodayInSaoPaulo } from "@/lib/data";
+import { getMatches, getParticipantBySessionToken, getPredictions, getRanking, getTodayInSaoPaulo } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: Promise<{ email?: string; participant?: string }>;
-}) {
+const sessionCookieName = "app-copa-session";
+
+export default async function Home() {
   let matches;
   let participant;
   let predictions;
   let ranking;
 
   try {
-    const params = await searchParams;
-    const email = params?.email || params?.participant;
-    participant = await getParticipantByEmail(email);
+    const cookieStore = await cookies();
+    participant = await getParticipantBySessionToken(cookieStore.get(sessionCookieName)?.value);
     [matches, participant, predictions, ranking] = await Promise.all([
       getMatches(),
       Promise.resolve(participant),
