@@ -696,17 +696,20 @@ export function PredictionApp({
                   <Gift className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black">Regras</h2>
-                  <p className="text-sm text-[#62677f]">Como funciona o bolão.</p>
+                  <h2 className="text-xl font-black">Bolão Dr. - Regras Oficiais</h2>
+                  <p className="text-sm text-[#62677f]">Chegou a hora de mostrar que você entende de futebol.</p>
                 </div>
               </div>
               <div className="grid gap-3">
-                <Rule points="+6 pontos" text="Acertou o placar exato da partida." />
-                <Rule points="+3 pontos" text="Acertou apenas o vencedor ou empate." />
-                <Rule points="0 pontos" text="Errou o resultado." />
-                <Rule points="Edição" text="Você pode alterar o palpite até 2h antes do início de cada jogo." />
-                <Rule points="Senha" text="O e-mail NEO e a senha protegem seus palpites. Neste navegador, voce continua logado." />
-                <Rule points="Ranking" text="O ranking exibe nome, sobrenome e departamento, nunca o e-mail." />
+                <Rule points="Liberação" text="Os palpites são liberados no dia de cada partida. Para participar, use seu e-mail NEO e crie uma senha no primeiro acesso." />
+                <Rule points="+6 pontos" text="Acertou o placar exato da partida. Aqui é nível especialista." />
+                <Rule points="+3 pontos" text="Acertou o vencedor ou o empate. Chegou perto, também pontua." />
+                <Rule points="0 pontos" text="Errou o resultado. Faz parte do jogo. Bora tentar recuperar no próximo." />
+                <Rule points="Edição" text="Você pode alterar ou registrar seu palpite até 2 horas antes do início de cada jogo. Depois disso, o palpite fica travado e segue valendo do jeito que estiver." />
+                <Rule points="Premiação" text="Ao final da fase de grupos, os prêmios vão para o 1º, 2º e 3º lugar. Quanto melhor o palpite, mais pontos. Quanto mais pontos, maior a chance de ficar no topo do ranking." />
+                <p className="rounded-2xl bg-[#f5f7fc] p-4 text-sm font-black leading-6 text-[#3a3d4f]">
+                  Prepare seus palpites, acompanhe os jogos e entre na disputa. Quem vai dominar o Bolão Dr. nessa fase de grupos?
+                </p>
               </div>
             </section>
 
